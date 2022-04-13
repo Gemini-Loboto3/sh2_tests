@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="dxrinput">
+      <UniqueIdentifier>{e3f8c33e-1d61-4cc6-b380-5c49cf86c11e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dxrinput\wrappers">
+      <UniqueIdentifier>{7520426d-cffe-432b-b96b-9c331a97c874}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="xaudio2">
+      <UniqueIdentifier>{1030479e-9c90-465c-b2ed-9e265fce6cd5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="criware">
+      <UniqueIdentifier>{88df9eef-1728-457a-a44c-22b78f00380d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
+    <None Include="d3d8.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="dxrinput\dinput8_proxy.h">
+      <Filter>dxrinput</Filter>
+    </ClInclude>
+    <ClInclude Include="dxrinput\wrappers\rawinput.h">
+      <Filter>dxrinput\wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="dxrinput\wrappers\xinput.h">
+      <Filter>dxrinput\wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="xaudio\audio_adx.h">
+      <Filter>xaudio2</Filter>
+    </ClInclude>
+    <ClInclude Include="xaudio\audio.h">
+      <Filter>xaudio2</Filter>
+    </ClInclude>
+    <ClInclude Include="xaudio\audio_game.h">
+      <Filter>xaudio2</Filter>
+    </ClInclude>
+    <ClInclude Include="d3d8.h" />
+    <ClInclude Include="framework.h" />
+    <ClInclude Include="inject.h" />
+    <ClInclude Include="sh2test.h" />
+    <ClInclude Include="timer.h" />
+    <ClInclude Include="criware\criware.h">
+      <Filter>criware</Filter>
+    </ClInclude>
+    <ClInclude Include="xxhash.h" />
+    <ClInclude Include="xxh3.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dxrinput\device_dinput.cpp">
+      <Filter>dxrinput</Filter>
+    </ClCompile>
+    <ClCompile Include="dxrinput\device_rawinput.cpp">
+      <Filter>dxrinput</Filter>
+    </ClCompile>
+    <ClCompile Include="dxrinput\device_xinput.cpp">
+      <Filter>dxrinput</Filter>
+    </ClCompile>
+    <ClCompile Include="dxrinput\dinput8_proxy.cpp">
+      <Filter>dxrinput</Filter>
+    </ClCompile>
+    <ClCompile Include="dxrinput\wrappers\rawinput.cpp">
+      <Filter>dxrinput\wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="dxrinput\wrappers\xinput.cpp">
+      <Filter>dxrinput\wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="xaudio\audio_main.cpp">
+      <Filter>xaudio2</Filter>
+    </ClCompile>
+    <ClCompile Include="xaudio\audio_adx.cpp">
+      <Filter>xaudio2</Filter>
+    </ClCompile>
+    <ClCompile Include="xaudio\audio_game.cpp">
+      <Filter>xaudio2</Filter>
+    </ClCompile>
+    <ClCompile Include="d3d8.cpp" />
+    <ClCompile Include="d3d8_proxy.cpp" />
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="sh2test.cpp" />
+    <ClCompile Include="timer.cpp" />
+    <ClCompile Include="util.cpp" />
+    <ClCompile Include="criware\criware_aix.cpp">
+      <Filter>criware</Filter>
+    </ClCompile>
+    <ClCompile Include="criware\criware_main.cpp">
+      <Filter>criware</Filter>
+    </ClCompile>
+    <ClCompile Include="criware\criware_decode.cpp">
+      <Filter>criware</Filter>
+    </ClCompile>
+    <ClCompile Include="criware\criware_adx.cpp">
+      <Filter>criware</Filter>
+    </ClCompile>
+    <ClCompile Include="xxhash.c" />
+    <ClCompile Include="criware\criware_server.cpp">
+      <Filter>criware</Filter>
+    </ClCompile>
+    <ClCompile Include="criware\criware_afs.cpp">
+      <Filter>criware</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="import.asm" />
+  </ItemGroup>
+</Project>
