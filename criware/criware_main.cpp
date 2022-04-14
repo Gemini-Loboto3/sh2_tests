@@ -109,7 +109,6 @@ void ADXT_Stop(ADXT_Object* obj)
 void ADXT_StartFname(ADXT_Object* obj, const char* fname)
 {
 	ADXStream *stream;
-
 	OpenADX(fname, &stream);
 
 	obj->initialized = 1;

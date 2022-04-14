@@ -176,6 +176,7 @@
     <None Include="d3d8.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="criware\criware_adx.h" />
     <ClInclude Include="criware\criware_adxfic.h" />
     <ClInclude Include="criware\criware.h" />
     <ClInclude Include="criware\criware_aix.h" />

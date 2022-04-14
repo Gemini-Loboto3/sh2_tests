@@ -139,10 +139,8 @@ int OpenADX(const char* filename, ADXStream** obj)
 	return 1;
 }
 
-void CloseADX(ADX* obj)
+void CloseADX(ADXStream* adx)
 {
-	ADXStream* adx = (ADXStream*)obj;
 	adx->Close();
-
 	delete adx;
 }
