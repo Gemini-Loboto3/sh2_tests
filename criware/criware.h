@@ -1,5 +1,6 @@
 #pragma once
 #include <windows.h>
+#include "criware_file.h"
 
 //-------------------------------------------
 // main exposed module
@@ -74,6 +75,21 @@ typedef struct ADX_headerV3
 		dummy4;					// 3C
 } ADX_headerV3;
 
+typedef struct ADX_headerAIX
+{
+	BE16 magic;					// 0
+	BE16 copyright_offset;		// 2
+	BYTE encoding,				// 4
+		block_size,				// 5
+		sample_bitdepth,		// 6
+		channel_count;			// 7
+	BE32 sample_rate,			// 8
+		total_samples;			// C
+	BE16 highpass_frequency;	// 10
+	BYTE version,				// 12
+		flags;					// 13
+} ADX_header_AIX;
+
 typedef struct ADX_headerV4
 {
 	BE16 magic;					// 0
@@ -122,19 +138,48 @@ typedef struct ADX_Handle
 
 typedef struct ADX {} ADX;
 
-void adx_set_coeff(ADX_HANDLE* adx);
-unsigned decode_adx_standard(ADX_HANDLE* adx, short* buffer, unsigned samples_needed, bool looping_enabled);
+void adx_set_coeff(CriFileStream* adx);
+unsigned decode_adx_standard(CriFileStream* adx, short* buffer, unsigned samples_needed, bool looping_enabled);
 
 int OpenADX(const char* filename, ADX** obj);
 void CloseADX(ADX* obj);
 
 //-------------------------------------------
 // generic header
+typedef struct AIX_ENRTY
+{
+	BE32 frequency;
+	BE32 channels;
+} AIX_ENTRY;
+
+typedef struct AIX_CHUNK
+{
+	BYTE magic[3],			// 00 'AIX'
+		type;				// 03 F, P, E
+	BE32 next;				// 04 offset to next header
+} AIX_CHUNK;
+
 typedef struct AIX_HEADER
 {
-	BYTE magic[3],	// 'AIX'
-		type;		// F, P, E
-	BE32 next;	// big endian, offset to next header + 8
+	DWORD magic;			// 00 'AIXF'
+	BE32 next;				// 04 offset to next header
+	BE32 unk8,				// 08
+		unkC,				// 0C
+		unk10,				// 10
+		unk14,				// 14
+		unk18,				// 18
+		unk1C,				// 1C
+		unk20,				// 20
+		unk24,				// 24
+		total_samples;		// 28
+	BE32 frequency,			// 2C frequency for all streams
+		unk30,				// 30
+		unk34,				// 34
+		unk38,				// 38
+		unk3C;				// 3C
+	BE32 stream_no,			// 40 number of interleaved streams
+		unk44;				// 44 no idea, always zero
+	AIX_ENTRY entries[759];	// 48 supplementary stream data
 } AIX_HEADER;
 
 // file header
@@ -146,12 +191,10 @@ typedef struct AIXF_HEADER
 // properties header
 typedef struct AIXP_HEADER
 {
-	BYTE magic[4];	// AIXP
-	BE32 next;
-	BYTE in_channels,
+	BYTE stream_id,
 		out_channels;
-	BE16 size,
-		frames;
+	BE16 size;
+	BE32 frames;
 } AIXP_HEADER;
 
 // end header

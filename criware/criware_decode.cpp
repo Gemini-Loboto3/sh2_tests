@@ -7,7 +7,7 @@ typedef signed int   int32_t;
 typedef unsigned int uint_fast32_t;
 typedef signed int   int_fast32_t;
 
-void adx_set_coeff(ADX_HANDLE* adx)
+void adx_set_coeff(CriFileStream* adx)
 {
 #define M_PI acos(-1.0)
 	double a, b, c;
@@ -25,7 +25,7 @@ void adx_set_coeff(ADX_HANDLE* adx)
 
 typedef struct bitstream
 {
-	HANDLE fp;
+	CriFileStream* fp;
 	int bitpos;
 	BYTE read;
 } bitstream;
@@ -33,12 +33,11 @@ typedef struct bitstream
 static __inline void bitstream_seek(bitstream* stream, u_long pos)
 {
 	stream->bitpos = pos % 8;
-	SetFilePointer(stream->fp, pos / 8, nullptr, FILE_BEGIN);
+	stream->fp->Seek(pos / 8, FILE_BEGIN);
 
 	if (stream->bitpos)
 	{
-		DWORD read;
-		ReadFile(stream->fp, &stream->read, 1, &read, nullptr);
+		stream->fp->Read(&stream->read, 1);
 		stream->read >>= stream->bitpos;
 	}
 }
@@ -51,8 +50,7 @@ static __inline u_long bitstream_read(bitstream* stream, u_long bits)
 	{
 		if (stream->bitpos == 0)
 		{
-			DWORD read;
-			ReadFile(stream->fp, &stream->read, 1, &read, nullptr);
+			stream->fp->Read(&stream->read, 1);
 			stream->bitpos = 0;
 		}
 		
@@ -84,13 +82,13 @@ static __inline short sbetole(short a)
 // samples_needed states how many sample 'sets' (one sample from every channel) need to be decoded to fill the buffer
 // looping_enabled is a boolean flag to control use of the built-in loop
 // Returns the number of sample 'sets' in the buffer that could not be filled (EOS)
-unsigned decode_adx_standard(ADX_HANDLE* adx, int16_t* buffer, unsigned samples_needed, bool looping_enabled)
+unsigned decode_adx_standard(CriFileStream* adx, int16_t* buffer, unsigned samples_needed, bool looping_enabled)
 {
 	unsigned const samples_per_block = (adx->block_size - 2) * 8 / adx->sample_bitdepth;
 	int16_t scale[4];
 
 	bitstream stream = { 0 };
-	stream.fp = adx->fp;
+	stream.fp = adx;
 
 	if (looping_enabled && !adx->loop_enabled)
 		looping_enabled = false;

@@ -1,11 +1,9 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "framework.h"
+#include <dsound.h>
 #include "inject.h"
 #include "criware/criware.h"
 #include <vector>
-
-#define BUFFER_SIZE		32768
-#define BUFFER_HALF		(BUFFER_SIZE / 2)
 
 void SetD3D8();
 void ClearD3D8();
@@ -34,10 +32,11 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	return TRUE;
 }
 #else
-#include <dsound.h>
 #pragma comment(lib, "dsound.lib")
+#define BUFFER_SIZE		32768
+#define BUFFER_HALF		(BUFFER_SIZE / 2)
 
-LRESULT WINAPI TestProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+LRESULT WINAPI WndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
 	{
@@ -57,7 +56,7 @@ HWND WinInit(HINSTANCE hInst)
 	WNDCLASSW cl = { 0 };
 	
 	cl.lpszClassName = L"sh2test";
-	cl.lpfnWndProc = TestProc;
+	cl.lpfnWndProc = WndProc;
 	cl.hInstance = hInst;
 	cl.hbrBackground = HBRUSH(GetStockObject(COLOR_WINDOW + 1));
 
@@ -69,7 +68,7 @@ HWND WinInit(HINSTANCE hInst)
 typedef struct Thread_data
 {
 	LPDIRECTSOUNDBUFFER pDB;
-	ADX_HANDLE* adx;
+	CriFileStream* adx;
 	u_long nBlockAlign;
 	int looping;
 } Thread_data;
@@ -129,11 +128,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	fmt.wFormatTag = WAVE_FORMAT_PCM;
 	fmt.nAvgBytesPerSec = 44100 * 4;
 
+	// primary buffer
 	desc.dwSize = sizeof(desc);
 	desc.dwFlags = DSBCAPS_PRIMARYBUFFER;
 	desc.dwBufferBytes = 0;
-	desc.lpwfxFormat = NULL; // Must be NULL for primary buffers.
-	//hr = pDS->CreateSoundBuffer(&desc, &pDB_main, nullptr);
+	desc.lpwfxFormat = NULL;
+	pDS->CreateSoundBuffer(&desc, &pDB_main, nullptr);
 	//if (FAILED(pDB_main->SetFormat(&fmt)))
 		/*MessageBoxA(hWnd, "failed\n", "ERRA", MB_OK)*/;
 
@@ -143,13 +143,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	DWORD bytes1, bytes2;
 
 	AIX* aix;
-	OpenAIX("data\\sound\\adx\\apart\\bgm_101.aix", &aix);
+	OpenAIX("data\\sound\\adx\\hotel\\bgm_113.aix", &aix);
 	CloseAIX(aix);
 
 	ADX* adx;
 	OpenADX("data\\sound\\adx\\apart\\bgm_014.adx", &adx);
-	ADX_HANDLE* in = (ADX_HANDLE*)adx;
+	CriFileStream* in = (CriFileStream*)adx;
 
+	// adx playback buffer
 	desc.lpwfxFormat = &fmt;
 	desc.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY;
 	desc.dwBufferBytes = BUFFER_SIZE;
@@ -159,22 +160,23 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	// perform first filling
 	pDB->Lock(0, BUFFER_SIZE, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-	decode_adx_standard((ADX_HANDLE*)adx, ptr1, bytes1 / fmt.nBlockAlign, 1);
+	decode_adx_standard((CriFileStream*)adx, ptr1, bytes1 / fmt.nBlockAlign, 1);
 	pDB->Unlock(ptr1, bytes1, ptr2, bytes2);
-	// kick playback
-	pDB->SetVolume(-1000);
-
-	ShowWindow(hWnd, SW_SHOW);
+	
 	Thread_data ctx;
 	ctx.pDB = pDB;
-	ctx.adx = (ADX_HANDLE*)adx;
+	ctx.adx = (CriFileStream*)adx;
 	ctx.nBlockAlign = fmt.nBlockAlign;
 	HANDLE hThread = CreateThread(nullptr, 0, test_thread, (LPVOID)&ctx, CREATE_SUSPENDED, nullptr);
 	SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
 
 	int flip = 1;
+	// kick playback
+	pDB->SetVolume(-1000);
 	pDB->Play(0, 0, DSBPLAY_LOOPING);
 	ResumeThread(hThread);
+
+	ShowWindow(hWnd, SW_SHOW);
 
 	MSG msg;
 	bool loop = true;
@@ -206,7 +208,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	CloseADX(adx);
 
 	pDB->Release();
-	//pDB_main->Release();
+	pDB_main->Release();
 	pDS->Release();
 }
 #endif

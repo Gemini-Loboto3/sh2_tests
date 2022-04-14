@@ -47,6 +47,9 @@
     </ClInclude>
     <ClInclude Include="xxhash.h" />
     <ClInclude Include="xxh3.h" />
+    <ClInclude Include="criware\criware_file.h">
+      <Filter>criware</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dxrinput\device_dinput.cpp">
@@ -99,6 +102,12 @@
       <Filter>criware</Filter>
     </ClCompile>
     <ClCompile Include="criware\criware_afs.cpp">
+      <Filter>criware</Filter>
+    </ClCompile>
+    <ClCompile Include="criware\criware_dsound.cpp">
+      <Filter>criware</Filter>
+    </ClCompile>
+    <ClCompile Include="criware\criware_file.cpp">
       <Filter>criware</Filter>
     </ClCompile>
   </ItemGroup>

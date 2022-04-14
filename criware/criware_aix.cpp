@@ -1,8 +1,9 @@
 #include "criware.h"
+#include <vector>
 
 typedef struct AIX_Handle
 {
-	HANDLE fp;
+	AIXParent *parent;
 } AIX_HANDLE;
 
 int OpenAIX(const char* filename, AIX**obj)
@@ -13,40 +14,31 @@ int OpenAIX(const char* filename, AIX**obj)
 	if (fp == INVALID_HANDLE_VALUE)
 		return 0;
 
+	AIXParent* parent = new AIXParent;
+	parent->fp = fp;
+
 	AIX_Handle* aix = new AIX_Handle;
-	aix->fp = fp;
+	aix->parent = parent;
 
 	// parse header and data
 	AIX_HEADER head;
 	DWORD read;
 	ReadFile(fp, &head, sizeof(head), &read, nullptr);
 
-	bool loop = true;
-
-	//AIXP_HEADER* p;
-	//AIXF_HEADER* f;
-	//AIXE_HEADER* e;
-
-	int cp = 0, cf = 0, ce = 0;
-	while (loop)
+	for (DWORD i = 0; i < head.stream_no.dw(); i++)
 	{
-		switch (head.type)
-		{
-		case 'P':
-			cp++;
-			break;
-		case 'E':
-			ce++;
-			break;
-		case 'F':
-			cf++;
-			break;
-		}
+		ADX_header_AIX adx_head;
 
-		SetFilePointer(fp, head.next.dw(), 0, FILE_CURRENT);
-		ReadFile(fp, &head, sizeof(head), &read, nullptr);
-		if (read != sizeof(head))
-			break;
+		auto s = &parent->streams[i];
+		s->Read(&adx_head, sizeof(adx_head));
+
+		s->block_size = adx_head.block_size;
+		s->channel_count = adx_head.channel_count;
+		s->highpass_frequency = adx_head.highpass_frequency.w();
+		s->sample_bitdepth = adx_head.sample_bitdepth;
+		s->sample_rate = adx_head.sample_rate.dw();
+		s->total_samples = adx_head.total_samples.dw();
+		s->copyright_offset = adx_head.copyright_offset.w();
 	}
 
 	*obj = (AIX*)aix;
@@ -57,10 +49,11 @@ void CloseAIX(AIX* obj)
 {
 	AIX_Handle* aix = (AIX_Handle*)obj;
 
-	if (aix->fp)
+	if (aix->parent)
 	{
-		CloseHandle(aix->fp);
-		aix->fp = nullptr;
+		aix->parent->Close();
+		delete aix->parent;
+		aix = nullptr;
 	}
 
 	delete obj;

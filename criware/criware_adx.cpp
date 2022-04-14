@@ -4,22 +4,23 @@ int OpenADX(const char* filename, ADX** obj)
 {
 	*obj = nullptr;
 
-	HANDLE fp = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-	if (fp == INVALID_HANDLE_VALUE)
-		return 0;
+	ADXStream* adx = new ADXStream;
 
-	ADX_headerV3 head;
-	DWORD read;
-	ReadFile(fp, &head, sizeof(head), &read, nullptr);
-
-	if (head.magic.w() != 0x8000)
+	if (FAILED(adx->Open(filename)))
 	{
-		CloseHandle(fp);
+		delete adx;
 		return 0;
 	}
 
-	ADX_HANDLE* adx = new ADX_HANDLE;
-	adx->fp = fp;
+	ADX_headerV3 head;
+	adx->Read(&head, sizeof(head));
+
+	if (head.magic.w() != 0x8000)
+	{
+		adx->Close();
+		delete adx;
+		return 0;
+	}
 
 	if (head.version == 3)
 	{
@@ -51,8 +52,8 @@ int OpenADX(const char* filename, ADX** obj)
 	}
 	else
 	{
+		adx->Close();
 		delete adx;
-		CloseHandle(fp);
 		return 0;
 	}
 
@@ -65,8 +66,8 @@ int OpenADX(const char* filename, ADX** obj)
 
 void CloseADX(ADX* obj)
 {
-	ADX_Handle* adx = (ADX_Handle*)obj;
+	ADXStream* adx = (ADXStream*)obj;
+	adx->Close();
 
-	CloseHandle(adx->fp);
 	delete adx;
 }
