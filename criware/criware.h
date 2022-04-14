@@ -1,6 +1,9 @@
 #pragma once
 #include <windows.h>
 #include <dsound.h>
+#include <vector>
+#include <string>
+#include "..\xxhash.h"
 
 //-------------------------------------------
 class BE16
@@ -35,10 +38,12 @@ public:
 		maxch(0),
 		stream(nullptr),
 		obj(nullptr),
-		volume(0)
+		volume(0),
+		initialized(0)
 	{}
 	~ADXT_Object()
 	{
+		initialized = 0;
 		if (stream) { delete stream; stream = nullptr; }
 		if (obj)
 		{
@@ -48,23 +53,27 @@ public:
 		}
 	}
 
+	CriFileStream* stream;
+	SndObj* obj;
+	int volume,
+		initialized;
+	//
 	u_long work_size;
 	void* work;
 	int maxch;
-	CriFileStream* stream;
-	SndObj* obj;
-	int volume;
 };
 
 class AIXP_Object
 {
 public:
 	AIXP_Object() : stream_no(0),
-		aix(nullptr)
+		aix(nullptr),
+		initialized(0)
 	{
 	}
 	~AIXP_Object()
 	{
+		initialized = 0;
 		for (int i = 0; i < stream_no; i++)
 		{
 			adxt[i].obj->Stop();
@@ -80,10 +89,23 @@ public:
 		}
 	}
 
-	int stream_no;
+	int stream_no,
+		initialized;
 	AIX_Handle* aix;
 	ADXT_Object adxt[8];
 };
+
+typedef struct ADX_Entry
+{
+	XXH64_hash_t hash;
+	std::string filename;
+	DWORD size;
+} ADX_Entry;
+
+typedef struct ADX_Dir
+{
+	std::vector<ADX_Entry> files;
+} ADX_Dir;
 
 #define	ADXF_STAT_STOP			(1)			/*	During standstill			*/
 #define ADXF_STAT_READING		(2)			/*	During data read-in			*/
@@ -99,10 +121,14 @@ public:
 #define ADXT_STAT_ERROR		(6)		/*	Read-in error outbreak state		*/
 
 void  ADXWIN_SetupDvdFs(void* /* ignored */);
+void  ADXWIN_ShutdownDvdFs();
 void  ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8);
-int   ADXM_SetupThrd(int* = nullptr);
+
+int  ADXM_SetupThrd(int* = nullptr);
+void ADXM_DestroyThrd();
 
 void  ADXT_Init();
+void  ADXT_Finish();
 ADXT_Object* ADXT_Create(int maxch, void* work, u_long work_size);
 void  ADXT_Stop(ADXT_Object* obj);
 int   ADXT_GetStat(ADXT_Object* obj);
@@ -113,9 +139,10 @@ void  ADXT_StartAfs(ADXT_Object* obj, int patid, int fid);
 void  AIX_GetInfo();
 int   ADXF_GetPtStat(int);
 
-void* ADXFIC_Create(const char* dname, int mode, char* work, int wksize);
-u_long ADXFIC_GetNumFiles(void* obj);
-const char* ADXFIC_GetFileName(void* obj, u_long index);
+ADX_Dir* ADXFIC_Create(const char* dname, int mode, char* work, int wksize);
+void ADXFIC_Destroy(ADX_Dir* obj);
+u_long ADXFIC_GetNumFiles(ADX_Dir* obj);
+const char* ADXFIC_GetFileName(ADX_Dir* obj, u_long index);
 
 int   ADXF_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfile);
 
@@ -136,6 +163,7 @@ int AIXP_GetStat(AIXP_Object *obj);
 extern HANDLE hServer;
 
 DWORD WINAPI server_thread(LPVOID params);
+void server_destroy();
 
 //-------------------------------------------
 typedef struct ADX_headerV3

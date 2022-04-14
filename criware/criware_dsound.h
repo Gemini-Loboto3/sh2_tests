@@ -1,5 +1,13 @@
 #pragma once
 
+enum DSOBJ_STATE
+{
+	DSOS_UNUSED,
+	DSOS_PLAYING,
+	DSOS_LOOPING,
+	DSOS_ENDED
+};
+
 class SndObj
 {
 public:
@@ -34,16 +42,16 @@ public:
 	CriFileStream* str;
 };
 
-void adxds_SetupSound(LPDIRECTSOUND8 pDS);
-void adxds_Update();
+void ds_SetupSound(LPDIRECTSOUND8 pDS);
+void ds_Update();
 
-SndObj* adxds_FindObj();
+SndObj* ds_FindObj();
 
-void adxds_CreateBuffer(SndObj* obj, CriFileStream* stream);
-u_long adxds_GetPosition(SndObj* obj);
+void ds_CreateBuffer(SndObj* obj, CriFileStream* stream);
+u_long ds_GetPosition(SndObj* obj);
 void adxds_SendData(SndObj* obj);
-void adxds_SetVolume(SndObj* obj, int vol);
-void adxds_Play(SndObj* obj);
-void adxds_Stop(SndObj* obj);
-int adxds_GetStatus(SndObj* obj);
-void adxds_Release(SndObj* obj);
+void ds_SetVolume(SndObj* obj, int vol);
+void ds_Play(SndObj* obj);
+void ds_Stop(SndObj* obj);
+int ds_GetStatus(SndObj* obj);
+void ds_Release(SndObj* obj);

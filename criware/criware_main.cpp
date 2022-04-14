@@ -12,19 +12,6 @@
 #include <algorithm>
 #include <dsound.h>
 #include "criware.h"
-#include "..\xxhash.h"
-
-typedef struct ADX_Entry
-{
-	XXH64_hash_t hash;
-	std::string filename;
-	DWORD size;
-} ADX_Entry;
-
-typedef struct ADX_Dir
-{
-	std::vector<ADX_Entry> files;
-} ADX_Dir;
 
 static void list_data_folder(const char *path, ADX_Dir &dir)
 {
@@ -88,7 +75,7 @@ int quickfind(ADX_Entry* f, size_t size, XXH64_hash_t hash)
 	return -1;
 }
 
-void* ADXFIC_Create(const char* dname, int mode, char *work, int wksize)
+ADX_Dir* ADXFIC_Create(const char* dname, int mode, char *work, int wksize)
 {
 	ADX_Dir *dir = new ADX_Dir;
 	// list all the files
@@ -99,29 +86,34 @@ void* ADXFIC_Create(const char* dname, int mode, char *work, int wksize)
 	return dir;
 }
 
-void ADXFIC_Destroy(void* obj)
+void ADXFIC_Destroy(ADX_Dir* obj)
 {
-	delete ((ADX_Dir*)obj);
+	delete obj;
 }
 
-u_long ADXFIC_GetNumFiles(void *obj)
+u_long ADXFIC_GetNumFiles(ADX_Dir* obj)
 {
-	return ((ADX_Dir*)obj)->files.size();
+	return obj->files.size();
 }
 
-const char* ADXFIC_GetFileName(void* obj, u_long index)
+const char* ADXFIC_GetFileName(ADX_Dir* obj, u_long index)
 {
-	return ((ADX_Dir*)obj)->files[index].filename.c_str();
+	return obj->files[index].filename.c_str();
 }
 
-// no need to fill this, it's just some leftover from the XBOX library
-void ADXWIN_SetupDvdFs(void* /* ignored */)
-{
-}
+// no need to fill these, it's just some leftovers from the XBOX library
+void ADXWIN_SetupDvdFs(void*) {}
+void ADXWIN_ShutdownDvdFs() {}
 
 void ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8)
 {
-	adxds_SetupSound(pDS8);
+	ds_SetupSound(pDS8);
+}
+
+// destroys the ADX threads
+void ADXM_DestroyThrd()
+{
+	server_destroy();
 }
 
 // initializes the threads used by the ADX server
@@ -154,10 +146,21 @@ int ADXF_GetPtStat(int)
 // returns an ADXT_STAT value
 int ADXT_GetStat(ADXT_Object* obj)
 {
-	if (obj->obj == nullptr || obj->stream == nullptr)
+	if (obj->initialized == 0)
 		return ADXT_STAT_STOP;
 
-	return adxds_GetStatus(obj->obj);
+	switch (obj->obj->GetStatus())
+	{
+	case DSOS_LOOPING:
+	case DSOS_PLAYING:
+		return ADXT_STAT_PLAYING;
+	case DSOS_UNUSED:
+		return ADXT_STAT_STOP;
+	case DSOS_ENDED:
+		return ADXT_STAT_PLAYEND;
+	}
+
+	return ADXT_STAT_STOP;
 }
 
 void ADXT_SetOutVol(ADXT_Object *obj, int volume)
@@ -168,9 +171,6 @@ void ADXT_SetOutVol(ADXT_Object *obj, int volume)
 // Starts to play ADX file with partition ID and file ID
 void ADXT_StartAfs(ADXT_Object* obj, int patid, int fid)
 {
-	if (obj->obj && obj->stream)
-		return;
-
 	asf_StartAfs(obj, patid, fid);
 }
 
@@ -178,8 +178,8 @@ void ADXT_Stop(ADXT_Object* obj)
 {
 	if (obj->obj)
 	{
-		adxds_Stop(obj->obj);
-		adxds_Release(obj->obj);
+		ds_Stop(obj->obj);
+		ds_Release(obj->obj);
 		obj->obj = nullptr;
 		obj->stream = nullptr;
 	}
@@ -191,19 +191,22 @@ void ADXT_StartFname(ADXT_Object* obj, const char* fname)
 
 	OpenADX(fname, &stream);
 
+	obj->initialized = 1;
 	obj->stream = stream;
-	obj->obj = adxds_FindObj();
+	obj->obj = ds_FindObj();
 
 	obj->obj->CreateBuffer(stream);
 	obj->obj->loops = true;
 	obj->obj->Play();
 }
 
-// i have no idea why we even need this
+// initializes the "talk" module, whatever that does
 void ADXT_Init()
-{
+{}
 
-}
+// theoretically destroys all active talk handles
+void ADXT_Finish()
+{}
 
 // Creation of an ADXT handle
 ADXT_Object* ADXT_Create(int maxch, void* work, u_long work_size)
@@ -223,19 +226,7 @@ void ADXT_Destroy(ADXT_Object* adxt)
 }
 
 void AIX_GetInfo()
-{
-
-}
-
-//
-void AIXP_Stop(AIXP_Object* obj)
-{
-	for (int i = 0; i < obj->stream_no; i++)
-	{
-		obj->adxt[i].obj->Stop();
-		obj->adxt[i].obj->Release();
-	}
-}
+{}
 
 // leave empty
 void AIXP_ExecServer() {}
@@ -259,6 +250,15 @@ void AIXP_Destroy(AIXP_Object* obj)
 	delete obj;
 }
 
+void AIXP_Stop(AIXP_Object* obj)
+{
+	for (int i = 0; i < obj->stream_no; i++)
+	{
+		obj->adxt[i].obj->Stop();
+		obj->adxt[i].obj->Release();
+	}
+}
+
 // set if this should loop
 void AIXP_SetLpSw(AIXP_Object* obj, int sw)
 {
@@ -275,8 +275,18 @@ void AIXP_StartFname(AIXP_Object* obj, const char* fname, void* atr)
 	for (int i = 0; i < obj->stream_no; i++)
 	{
 		obj->adxt[i].stream = &aix->parent->stream[i];
-		obj->adxt[i].obj = adxds_FindObj();
+		obj->adxt[i].obj = ds_FindObj();
+		obj->adxt[i].obj->CreateBuffer(obj->adxt[i].stream);
+		obj->adxt[i].obj->loops = true;
 	}
+
+	for (int i = 0; i < obj->stream_no; i++)
+	{
+		obj->adxt[i].initialized = 1;
+		obj->adxt[i].obj->Play();
+	}
+
+	obj->initialized = 1;
 }
 
 ADXT_Object* AIXP_GetAdxt(AIXP_Object* obj, int trno)
@@ -289,5 +299,19 @@ ADXT_Object* AIXP_GetAdxt(AIXP_Object* obj, int trno)
 
 int AIXP_GetStat(AIXP_Object* obj)
 {
-	return AIXP_STAT_PLAYEND;
+	if (obj->initialized == 0)
+		return AIXP_STAT_STOP;
+
+	switch (obj->adxt[0].obj->GetStatus())
+	{
+	case DSOS_PLAYING:
+	case DSOS_LOOPING:
+		return AIXP_STAT_PLAYEND;
+	case DSOS_UNUSED:
+		return AIXP_STAT_STOP;
+	case DSOS_ENDED:
+		return AIXP_STAT_PLAYEND;
+	}
+
+	return AIXP_STAT_STOP;
 }

@@ -182,11 +182,13 @@ void Inject_tests()
 	INJECT(0x55F850, ADXFIC_Create);
 	INJECT(0x55F890, ADXFIC_GetNumFiles);
 	INJECT(0x55F8F0, ADXFIC_GetFileName);
+	INJECT(0x55F860, ADXFIC_Destroy);
 
-	INJECT(0x55D4C0, AIX_GetInfo);
 	INJECT(0x55F740, ADXWIN_SetupDvdFs);
+	INJECT(0x55F7C0, ADXWIN_ShutdownDvdFs);
 	INJECT(0x55F7F0, ADXWIN_SetupSound);
 	INJECT(0x55FD70, ADXM_SetupThrd);
+	INJECT(0x55FFD0, ADXM_DestroyThrd);
 	
 	INJECT(0x55E400, ADXF_LoadPartitionNw);
 	INJECT(0x55E570, ADXF_GetPtStat);
@@ -198,7 +200,9 @@ void Inject_tests()
 	INJECT(0x55C720, ADXT_GetStat);
 	INJECT(0x55CC60, ADXT_SetOutVol);
 	INJECT(0x5604A0, ADXT_Init);
+	INJECT(0x560580, ADXT_Finish);
 
+	INJECT(0x55D4C0, AIX_GetInfo);
 	INJECT(0x55D540, AIXP_Create);
 	INJECT(0x55D740, AIXP_Destroy);
 	INJECT(0x55D840, AIXP_StartFname);
@@ -207,7 +211,6 @@ void Inject_tests()
 	INJECT(0x55D970, AIXP_GetAdxt);
 	INJECT(0x55D9A0, AIXP_SetLpSw);
 	INJECT(0x55DCE0, AIXP_ExecServer);
-	
 #else
 	INJECT_CALL(0x515014, ADXT_SetupThrdX, 5);
 	INJECT_CALLX(0x55FDB0, vsync_setup, 0x55FE32);

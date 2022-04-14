@@ -14,13 +14,21 @@ enum Command
 };
 
 HANDLE hServer;
+static bool loop = true;
 
 DWORD WINAPI server_thread(LPVOID params)
 {
-	while (1)
+	while (loop)
 	{
-		adxds_Update();
-
+		ds_Update();
 		Sleep(10);
 	}
+
+	return 0;
+}
+
+void server_destroy()
+{
+	loop = false;
+	WaitForSingleObject(hServer, INFINITE);
 }

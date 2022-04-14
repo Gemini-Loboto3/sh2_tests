@@ -15,7 +15,7 @@ LPDIRECTSOUND8 pDS8;
 
 static SndObj obj_tbl[MAX_OBJ];
 
-void adxds_SetupSound(LPDIRECTSOUND8 pDS)
+void ds_SetupSound(LPDIRECTSOUND8 pDS)
 {
 	pDS8 = pDS;
 
@@ -23,7 +23,7 @@ void adxds_SetupSound(LPDIRECTSOUND8 pDS)
 		obj_tbl[i].used = 0;
 }
 
-SndObj* adxds_FindObj()
+SndObj* ds_FindObj()
 {
 	for (int i = 0; MAX_OBJ; i++)
 	{
@@ -34,7 +34,7 @@ SndObj* adxds_FindObj()
 	return nullptr;
 }
 
-void adxds_CreateBuffer(SndObj *obj, CriFileStream* stream)
+void ds_CreateBuffer(SndObj *obj, CriFileStream* stream)
 {
 	obj->str = stream;
 
@@ -64,7 +64,7 @@ void adxds_CreateBuffer(SndObj *obj, CriFileStream* stream)
 	obj->offset = 0;
 }
 
-u_long adxds_GetPosition(SndObj* obj)
+u_long ds_GetPosition(SndObj* obj)
 {
 	DWORD pos;
 	obj->pBuf->GetCurrentPosition(&pos, nullptr);
@@ -77,7 +77,7 @@ void adxds_SendData(SndObj *obj)
 	u_long add = 0, pos;
 	const DWORD snd_dwBytes = BUFFER_QUART;
 
-	adxds_GetPosition(obj);
+	ds_GetPosition(obj);
 	obj->pBuf->GetCurrentPosition(&pos, nullptr);
 
 	if (pos - obj->offset < 0)
@@ -98,43 +98,45 @@ void adxds_SendData(SndObj *obj)
 	}
 }
 
-void adxds_SetVolume(SndObj* obj, int vol)
+void ds_SetVolume(SndObj* obj, int vol)
 {
 	obj->volume = vol;
 	if (obj->used && obj->pBuf)
 		obj->pBuf->SetVolume(vol * 10);
 }
 
-void adxds_Play(SndObj* obj)
+void ds_Play(SndObj* obj)
 {
 	if (obj->used && obj->pBuf)
 		obj->pBuf->Play(0, 0, DSBPLAY_LOOPING);
 }
 
-void adxds_Stop(SndObj* obj)
+void ds_Stop(SndObj* obj)
 {
 	if (obj->used && obj->pBuf)
 	{
 		obj->pBuf->Stop();
-		while (adxds_GetStatus(obj) == ADXT_STAT_PLAYING);
+		while (ds_GetStatus(obj) == ADXT_STAT_PLAYING);
 	}
 }
 
-int adxds_GetStatus(SndObj* obj)
+int ds_GetStatus(SndObj* obj)
 {
 	if (obj->used == 0)
-		return ADXT_STAT_STOP;
+		return DSOS_UNUSED;
 
 	DWORD status;
 	obj->pBuf->GetStatus(&status);
 
-	if(status == DSBSTATUS_LOOPING || status == DSBSTATUS_PLAYING)
-		return ADXT_STAT_PLAYING;
+	if (status == DSBSTATUS_LOOPING)
+		return DSOS_LOOPING;
+	if (status == DSBSTATUS_PLAYING)
+		return DSOS_PLAYING;
 
-	return ADXT_STAT_PLAYEND;
+	return DSOS_ENDED;
 }
 
-void adxds_Release(SndObj* obj)
+void ds_Release(SndObj* obj)
 {
 	if (obj->used)
 	{
@@ -143,7 +145,7 @@ void adxds_Release(SndObj* obj)
 	}
 }
 
-void adxds_Update()
+void ds_Update()
 {
 	for (int i = 0; i < MAX_OBJ; i++)
 	{
@@ -157,12 +159,12 @@ void adxds_Update()
 }
 
 //-------------------------------------
-void SndObj::CreateBuffer(CriFileStream* stream) { adxds_CreateBuffer(this, stream); };
-void SndObj::Play() { adxds_Play(this); }
-void SndObj::Stop() { adxds_Stop(this); }
+void SndObj::CreateBuffer(CriFileStream* stream) { ds_CreateBuffer(this, stream); };
+void SndObj::Play() { ds_Play(this); }
+void SndObj::Stop() { ds_Stop(this); }
 
-u_long SndObj::GetPosition() { return adxds_GetPosition(this); }
-int SndObj::GetStatus() { return adxds_GetStatus(this); }
+u_long SndObj::GetPosition() { return ds_GetPosition(this); }
+int SndObj::GetStatus() { return ds_GetStatus(this); }
 void SndObj::SendData() { adxds_SendData(this); }
-void SndObj::SetVolume(int vol) { adxds_SetVolume(this, vol); }
-void SndObj::Release() { adxds_Release(this); }
+void SndObj::SetVolume(int vol) { ds_SetVolume(this, vol); }
+void SndObj::Release() { ds_Release(this); }

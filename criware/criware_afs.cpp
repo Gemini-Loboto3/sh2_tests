@@ -51,7 +51,7 @@ int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfil
 
 int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 {
-	auto ds = adxds_FindObj();
+	auto ds = ds_FindObj();
 	if (ds == nullptr)
 		return 0;
 	HANDLE fp = CreateFileA(part_name.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -61,6 +61,7 @@ int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 	str->Open(fp);
 	OpenADX(str);
 
+	obj->initialized = 1;
 	obj->stream = str;
 	obj->obj = ds;
 
