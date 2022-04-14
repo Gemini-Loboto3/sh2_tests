@@ -50,6 +50,12 @@
     <ClInclude Include="criware\criware_file.h">
       <Filter>criware</Filter>
     </ClInclude>
+    <ClInclude Include="criware\criware_dsound.h">
+      <Filter>criware</Filter>
+    </ClInclude>
+    <ClInclude Include="criware\criware_aix.h">
+      <Filter>criware</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dxrinput\device_dinput.cpp">

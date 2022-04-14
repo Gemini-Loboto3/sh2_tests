@@ -177,6 +177,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="criware\criware.h" />
+    <ClInclude Include="criware\criware_aix.h" />
+    <ClInclude Include="criware\criware_dsound.h" />
     <ClInclude Include="criware\criware_file.h" />
     <ClInclude Include="d3d8.h" />
     <ClInclude Include="dxrinput\dinput8_proxy.h" />

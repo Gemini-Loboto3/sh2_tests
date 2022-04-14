@@ -9,6 +9,15 @@ int ADXStream::Open(const char* filename)
 	if (fp == INVALID_HANDLE_VALUE)
 		return S_FALSE;
 
+	start = 0;
+	return S_OK;
+}
+
+int ADXStream::Open(HANDLE _fp)
+{
+	fp = _fp;
+	start = SetFilePointer(fp, 0, nullptr, FILE_CURRENT);
+
 	return S_OK;
 }
 
@@ -25,7 +34,7 @@ void ADXStream::Read(void* buffer, size_t size)
 
 void ADXStream::Seek(u_long pos, u_long mode)
 {
-	SetFilePointer(fp, pos, nullptr, mode);
+	SetFilePointer(fp, pos + start, nullptr, mode);
 }
 
 // ------------------------------------------------

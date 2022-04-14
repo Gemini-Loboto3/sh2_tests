@@ -37,12 +37,14 @@ class ADXStream : public CriFileStream
 {
 public:
 	int Open(const char* filename);
+	int Open(HANDLE fp);
 	void Close();
 
 	virtual void Read(void* buffer, size_t size);
 	virtual void Seek(u_long pos, u_long mode);
 
 	HANDLE fp;
+	u_long start;
 };
 
 // AIX streaming interface, a hell of caching and deinterleaving

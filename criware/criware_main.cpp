@@ -142,7 +142,7 @@ int ADXM_SetupThrd(int* priority /* ignored */)
 
 int ADXF_LoadPartitionNw(int ptid, const char *filename, void *ptinfo, void *nfile)
 {
-	_ADXF_LoadPartitionNw(ptid, filename, ptinfo, nfile);
+	asf_LoadPartitionNw(ptid, filename, ptinfo, nfile);
 
 	return 1;
 }
@@ -154,17 +154,124 @@ int ADXF_GetPtStat(int)
 }
 
 // returns an ADXT_STAT value
-int ADXT_GetStat(void*)
+int ADXT_GetStat(ADXT_Object* obj)
 {
-	return ADXT_STAT_PLAYING;
+	if (obj->obj == nullptr)
+		return ADXT_STAT_STOP;
+
+	return adxds_GetStatus(obj->obj);
 }
 
-void ADXT_SetOutVol(int, int)
+void ADXT_SetOutVol(ADXT_Object *obj, int volume)
+{
+	obj->volume;
+}
+
+// Starts to play ADX file with partition ID and file ID
+int ADXT_StartAfs(ADXT_Object* obj, int patid, int fid)
+{
+	return asf_StartAfs(obj, patid, fid);
+}
+
+void ADXT_Stop(ADXT_Object* obj)
+{
+}
+
+void ADXT_StartFname(ADXT_Object* obj, const char* fname)
+{
+	ADXStream *stream;
+
+	OpenADX(fname, &stream);
+}
+
+void ADX_SetupSound(LPDIRECTSOUND8 pDS8)
+{
+	adxds_SetupSound(pDS8);
+}
+
+// i have no idea why we even need this
+void ADXT_Init()
 {
 
 }
 
-int ADXT_StartAfs(int, int, int)
+// Creation of an ADXT handle
+ADXT_Object* ADXT_Create(int maxch, void* work, u_long work_size)
 {
-	return 0;
+	ADXT_Object* obj = new ADXT_Object;
+	obj->maxch = maxch;
+	obj->work = work;
+	obj->work_size = work_size;
+	obj->obj = nullptr;
+	obj->streams = nullptr;
+
+	return obj;
+}
+
+// Destroy an ADXT handle
+void ADXT_Destroy(ADXT_Object* adxt)
+{
+
+}
+
+void AIX_GetInfo()
+{
+
+}
+
+//
+void AIXP_Stop(AIXP_Object* obj)
+{
+
+}
+
+// leave empty
+void AIXP_ExecServer() {}
+
+void AIXP_Destroy(AIXP_Object* obj)
+{
+
+}
+
+AIXP_Object* AIXP_Create(int maxntr, int maxnch, void* work, int worksize)
+{
+	AIXP_Object* obj = new AIXP_Object;
+
+	for (int i = 0; i < _countof(obj->adxt); i++)
+	{
+		obj->adxt[i].maxch = maxnch;
+		obj->adxt[i].work_size = worksize;
+		obj->adxt[i].work = work;
+	}
+
+	return obj;
+}
+
+// set if this should loop
+void AIXP_SetLpSw(AIXP_Object* obj, int sw)
+{
+}
+
+void AIXP_StartFname(AIXP_Object* obj, const char* fname, void* atr)
+{
+	AIX_Handle* aix;
+
+	OpenAIX(fname, &aix);
+	obj->aix = aix;
+
+	for (u_long i = 0; aix->parent->streams; i++)
+	{
+		obj->adxt[i].streams = &aix->parent->streams[i];
+		obj->adxt[i].obj = adxds_FindObj();
+	}
+}
+
+ADXT_Object* AIXP_GetAdxt(AIXP_Object* obj, int trno)
+{
+	return &obj->adxt[trno];
+}
+
+int AIXP_GetStat(AIXP_Object* obj)
+{
+	return AIXP_STAT_PLAYEND;
 }

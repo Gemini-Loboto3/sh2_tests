@@ -1,32 +1,6 @@
 #pragma once
 #include <windows.h>
-#include "criware_file.h"
-
-//-------------------------------------------
-// main exposed module
-#define	ADXF_STAT_STOP			(1)			/*	During standstill			*/
-#define ADXF_STAT_READING		(2)			/*	During data read-in			*/
-#define ADXF_STAT_READEND		(3)			/*	Data read-in end			*/
-#define ADXF_STAT_ERROR			(4)			/*	Read-in error outbreak state*/
-
-#define	ADXT_STAT_STOP		(0)		/*	During standstill					*/
-#define ADXT_STAT_DECINFO	(1)		/*	Getting header information			*/
-#define ADXT_STAT_PREP		(2)		/*	During play preparation				*/
-#define ADXT_STAT_PLAYING	(3)		/*	During decode and play				*/
-#define ADXT_STAT_DECEND	(4)		/*	Decode end							*/
-#define ADXT_STAT_PLAYEND	(5)		/*	Play end							*/
-#define ADXT_STAT_ERROR		(6)		/*	Read-in error outbreak state		*/
-
-void* ADXFIC_Create(const char* dname, int mode, char* work, int wksize);
-
-int ADXF_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfile);
-int _ADXF_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfile);
-
-//-------------------------------------------
-// file server module
-extern HANDLE hServer;
-
-DWORD WINAPI server_thread(LPVOID params);
+#include <dsound.h>
 
 //-------------------------------------------
 class BE16
@@ -46,6 +20,80 @@ public:
 private:
 	BYTE d[4];
 };
+
+#include "criware_file.h"
+#include "criware_dsound.h"
+#include "criware_aix.h"
+
+//-------------------------------------------
+// main exposed module
+typedef struct ADXT_Object
+{
+	u_long work_size;
+	void* work;
+	int maxch;
+	CriFileStream* streams;
+	SndObj* obj;
+	int volume;
+} ADXT_Object;
+
+typedef struct AIXP_Object
+{
+	AIX_Handle* aix;
+	ADXT_Object adxt[8];
+} AIXP_Object;
+
+#define	ADXF_STAT_STOP			(1)			/*	During standstill			*/
+#define ADXF_STAT_READING		(2)			/*	During data read-in			*/
+#define ADXF_STAT_READEND		(3)			/*	Data read-in end			*/
+#define ADXF_STAT_ERROR			(4)			/*	Read-in error outbreak state*/
+
+#define	ADXT_STAT_STOP		(0)		/*	During standstill					*/
+#define ADXT_STAT_DECINFO	(1)		/*	Getting header information			*/
+#define ADXT_STAT_PREP		(2)		/*	During play preparation				*/
+#define ADXT_STAT_PLAYING	(3)		/*	During decode and play				*/
+#define ADXT_STAT_DECEND	(4)		/*	Decode end							*/
+#define ADXT_STAT_PLAYEND	(5)		/*	Play end							*/
+#define ADXT_STAT_ERROR		(6)		/*	Read-in error outbreak state		*/
+
+void  ADXXB_SetupDvdFs(void* /* ignored */);
+void  ADX_SetupSound(LPDIRECTSOUND8 pDS8);
+int   ADXM_SetupThrd(int* = nullptr);
+
+void  ADXT_Init();
+ADXT_Object* ADXT_Create(int maxch, void* work, u_long work_size);
+void  ADXT_Stop(ADXT_Object* obj);
+int   ADXT_GetStat(ADXT_Object* obj);
+void  ADXT_StartFname(ADXT_Object* obj, const char* fname);
+void  ADXT_SetOutVol(ADXT_Object* obj, int);
+int   ADXT_StartAfs(ADXT_Object* obj, int patid, int fid);
+
+void  AIX_GetInfo();
+int   ADXF_GetPtStat(int);
+
+void* ADXFIC_Create(const char* dname, int mode, char* work, int wksize);
+u_long ADXFIC_GetNumFiles(void* obj);
+const char* ADXFIC_GetFileName(void* obj, u_long index);
+
+int   ADXF_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfile);
+
+int   asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfile);
+int   asf_StartAfs(ADXT_Object* obj, int patid, int fid);
+
+void AIXP_Stop(AIXP_Object *obj);
+void AIXP_ExecServer();
+void AIXP_Destroy(AIXP_Object *obj);
+AIXP_Object* AIXP_Create(int maxntr, int maxnch, void* work, int worksize);
+void AIXP_SetLpSw(AIXP_Object *obj, int sw);
+void AIXP_StartFname(AIXP_Object *obj, const char *fname, void *atr);
+ADXT_Object* AIXP_GetAdxt(AIXP_Object *obj, int trno);
+int AIXP_GetStat(AIXP_Object *obj);
+
+//-------------------------------------------
+// file server module
+extern HANDLE hServer;
+
+DWORD WINAPI server_thread(LPVOID params);
 
 //-------------------------------------------
 typedef struct ADX_headerV3
@@ -142,74 +190,5 @@ void adx_set_coeff(CriFileStream* adx);
 unsigned decode_adx_standard(CriFileStream* adx, short* buffer, unsigned samples_needed, bool looping_enabled);
 
 int OpenADX(const char* filename, ADXStream** obj);
+int OpenADX(ADXStream* adx);
 void CloseADX(ADX* obj);
-
-//-------------------------------------------
-// generic header
-typedef struct AIX_ENRTY
-{
-	BE32 frequency;
-	BE32 channels;
-} AIX_ENTRY;
-
-typedef struct AIX_CHUNK
-{
-	BYTE magic[3],			// 00 'AIX'
-		type;				// 03 F, P, E
-	BE32 next;				// 04 offset to next header
-} AIX_CHUNK;
-
-typedef struct AIX_HEADER
-{
-	DWORD magic;			// 00 'AIXF'
-	BE32 next;				// 04 offset to next header
-	BE32 unk8,				// 08
-		unkC,				// 0C sector alignment?
-		unk10,				// 10
-		unk14,				// 14
-		unk18,				// 18
-		unk1C,				// 1C
-		unk20,				// 20
-		data_size,			// 24 amount of interleaved ADX data
-		total_samples;		// 28
-	BE32 frequency,			// 2C frequency for all streams
-		unk30,				// 30
-		unk34,				// 34
-		unk38,				// 38
-		unk3C;				// 3C
-	BYTE stream_count,			// 40 number of interleaved streams
-		unk41[3];			// 41
-	BE32 unk44;				// 44 no idea, always zero
-	AIX_ENTRY entries[759];	// 48 supplementary stream data
-} AIX_HEADER;
-
-// file header
-typedef struct AIXF_HEADER
-{
-	BYTE magic[4];	// AIXF
-} AIXF_HEADER;
-
-// properties header
-typedef struct AIXP_HEADER
-{
-	BYTE stream_id,
-		out_channels;
-	BE16 size;
-	BE32 frames;
-} AIXP_HEADER;
-
-// end header
-typedef struct AIXE_HEADER
-{
-	BYTE magic[4];	// AIXE
-} AIXE_HEADER;
-
-typedef struct AIX {} AIX;
-
-typedef struct AIX_Handle
-{
-	AIXParent* parent;
-} AIX_HANDLE;
-
-int OpenAIX(const char* filename, AIX_Handle** obj);
-void CloseAIX(AIX* obj);

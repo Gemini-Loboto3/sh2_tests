@@ -19,6 +19,8 @@ DWORD WINAPI server_thread(LPVOID params)
 {
 	while (1)
 	{
+		adxds_Update();
+
 		Sleep(10);
 	}
 }
