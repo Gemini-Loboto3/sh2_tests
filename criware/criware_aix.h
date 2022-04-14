@@ -1,3 +1,5 @@
+#pragma once
+
 #define	AIXP_STAT_STOP		(0)		/*	During standstill					*/
 #define AIXP_STAT_PREP		(1)		/*	During play preparation				*/
 #define AIXP_STAT_PLAYING	(2)		/*	During decode and play				*/

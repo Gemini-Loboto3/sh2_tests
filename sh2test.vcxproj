@@ -176,10 +176,12 @@
     <None Include="d3d8.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="criware\criware_adxfic.h" />
     <ClInclude Include="criware\criware.h" />
     <ClInclude Include="criware\criware_aix.h" />
     <ClInclude Include="criware\criware_dsound.h" />
     <ClInclude Include="criware\criware_file.h" />
+    <ClInclude Include="criware\criware_server.h" />
     <ClInclude Include="d3d8.h" />
     <ClInclude Include="dxrinput\dinput8_proxy.h" />
     <ClInclude Include="dxrinput\wrappers\rawinput.h" />
@@ -196,6 +198,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="criware\criware_adx.cpp" />
+    <ClCompile Include="criware\criware_adxfic.cpp" />
     <ClCompile Include="criware\criware_afs.cpp" />
     <ClCompile Include="criware\criware_decode.cpp" />
     <ClCompile Include="criware\criware_aix.cpp" />

@@ -56,6 +56,12 @@
     <ClInclude Include="criware\criware_aix.h">
       <Filter>criware</Filter>
     </ClInclude>
+    <ClInclude Include="criware\criware_adxfic.h">
+      <Filter>criware</Filter>
+    </ClInclude>
+    <ClInclude Include="criware\criware_server.h">
+      <Filter>criware</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dxrinput\device_dinput.cpp">
@@ -114,6 +120,9 @@
       <Filter>criware</Filter>
     </ClCompile>
     <ClCompile Include="criware\criware_file.cpp">
+      <Filter>criware</Filter>
+    </ClCompile>
+    <ClCompile Include="criware\criware_adxfic.cpp">
       <Filter>criware</Filter>
     </ClCompile>
   </ItemGroup>

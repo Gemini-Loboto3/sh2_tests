@@ -1,9 +1,12 @@
 /*
+* Copyright (C) 2022 Gemini
 * ===============================================================
 * DirectSound interface for buffers
+* ---------------------------------------------------------------
+* Just an interface with DirectSound8 to generate buffers and
+* some helpers.
 * ===============================================================
 */
-#include <dsound.h>
 #include "criware.h"
 
 LPDIRECTSOUND8 pDS8;
@@ -159,6 +162,7 @@ void ds_Update()
 }
 
 //-------------------------------------
+// C++ helpers
 void SndObj::CreateBuffer(CriFileStream* stream) { ds_CreateBuffer(this, stream); };
 void SndObj::Play() { ds_Play(this); }
 void SndObj::Stop() { ds_Stop(this); }

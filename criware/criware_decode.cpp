@@ -1,4 +1,13 @@
-#include <windows.h>
+/*
+* Copyright (C) 2022 Gemini
+* ===============================================================
+* ADX ADPCM decoder
+* ---------------------------------------------------------------
+* Code for decompressing ADX data to PCM samples. Readapted from
+* the following source code:
+* https://handwiki.org/wiki/Software:ADX_(file_format)
+* ===============================================================
+*/
 #include <math.h>
 #include "criware.h"
 
@@ -133,7 +142,6 @@ unsigned decode_adx_standard(CriFileStream* adx, int16_t* buffer, unsigned sampl
 				double sample_prediction = adx->coefficient[0] * adx->past_samples[i * 2 + 0] + adx->coefficient[1] * adx->past_samples[i * 2 + 1];
 
 				// Seek to the sample offset, read and sign extend it to a 32bit integer
-				// Implementing sign extension is left as an exercise for the reader
 				// The sign extension will also need to include a endian adjustment if there are more than 8 bits
 				bitstream_seek(&stream, started_at + adx->sample_bitdepth * sample_offset + adx->block_size * 8 * i);
 				int_fast32_t sample_error = bitstream_read(&stream, adx->sample_bitdepth);

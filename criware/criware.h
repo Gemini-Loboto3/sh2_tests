@@ -1,4 +1,5 @@
 #pragma once
+
 #include <windows.h>
 #include <dsound.h>
 #include <vector>
@@ -6,11 +7,19 @@
 #include "..\xxhash.h"
 
 //-------------------------------------------
+// big endian helpers
 class BE16
 {
 public:
 	__inline WORD w() { return (d[0] << 8) | (d[1]); }
 	__inline short s() { return (short)w(); }
+
+	operator BYTE()  { return w() & 0xff; }
+	operator WORD()  { return w(); }
+	operator DWORD() { return w(); }
+	operator char()  { return s() & 0xff; }
+	operator short() { return s(); }
+	operator int()   { return s(); }
 private:
 	BYTE d[2];
 };
@@ -20,6 +29,13 @@ class BE32
 public:
 	__inline DWORD dw() { return (d[0] << 24) | (d[1] << 16) | (d[2] << 8) | (d[3]); }
 	__inline int i() { return (int)dw(); }
+
+	operator BYTE()  { return dw() & 0xff; }
+	operator WORD()  { return dw() & 0xffff; }
+	operator DWORD() { return dw(); }
+	operator char()  { return i() & 0xff; }
+	operator short() { return i() & 0xffff; }
+	operator int()   { return i(); }
 private:
 	BYTE d[4];
 };
@@ -27,6 +43,8 @@ private:
 #include "criware_file.h"
 #include "criware_dsound.h"
 #include "criware_aix.h"
+#include "criware_adxfic.h"
+#include "criware_server.h"
 
 //-------------------------------------------
 // main exposed module
@@ -95,18 +113,6 @@ public:
 	ADXT_Object adxt[8];
 };
 
-typedef struct ADX_Entry
-{
-	XXH64_hash_t hash;
-	std::string filename;
-	DWORD size;
-} ADX_Entry;
-
-typedef struct ADX_Dir
-{
-	std::vector<ADX_Entry> files;
-} ADX_Dir;
-
 #define	ADXF_STAT_STOP			(1)			/*	During standstill			*/
 #define ADXF_STAT_READING		(2)			/*	During data read-in			*/
 #define ADXF_STAT_READEND		(3)			/*	Data read-in end			*/
@@ -124,8 +130,8 @@ void  ADXWIN_SetupDvdFs(void* /* ignored */);
 void  ADXWIN_ShutdownDvdFs();
 void  ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8);
 
-int  ADXM_SetupThrd(int* = nullptr);
-void ADXM_DestroyThrd();
+void ADXM_SetupThrd(int* = nullptr);
+void ADXM_ShutdownThrd();
 
 void  ADXT_Init();
 void  ADXT_Finish();
@@ -157,13 +163,6 @@ void AIXP_SetLpSw(AIXP_Object *obj, int sw);
 void AIXP_StartFname(AIXP_Object *obj, const char *fname, void *atr);
 ADXT_Object* AIXP_GetAdxt(AIXP_Object *obj, int trno);
 int AIXP_GetStat(AIXP_Object *obj);
-
-//-------------------------------------------
-// file server module
-extern HANDLE hServer;
-
-DWORD WINAPI server_thread(LPVOID params);
-void server_destroy();
 
 //-------------------------------------------
 typedef struct ADX_headerV3

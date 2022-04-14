@@ -1,5 +1,15 @@
+/*
+* Copyright (C) 2022 Gemini
+* ===============================================================
+* File streaming interfaces
+* ---------------------------------------------------------------
+* Classes to manage ADX and AIX streaming to a sound object.
+* 
+* TODO: The AIX module could need some rewriting, as the code
+* isn't exactly the best and most efficient.
+* ===============================================================
+*/
 #include "criware.h"
-#include "criware_file.h"
 
 // ------------------------------------------------
 // ADX stream code, normal file wrapping

@@ -1,11 +1,14 @@
 /*
-* =================================================
-* ASF partition module
-* =================================================
+* Copyright (C) 2022 Gemini
+* ===============================================================
+* AFS partition module
+* ---------------------------------------------------------------
+* Nothing too fancy, it's just an archive with offsets and sizes
+* in the header. It also stores file names, but they are ignored
+* as the access is managed via IDs.
+* ===============================================================
 */
 #include "criware.h"
-#include <vector>
-#include <string>
 
 typedef struct AFS_header
 {

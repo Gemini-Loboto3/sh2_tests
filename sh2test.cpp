@@ -187,8 +187,9 @@ void Inject_tests()
 	INJECT(0x55F740, ADXWIN_SetupDvdFs);
 	INJECT(0x55F7C0, ADXWIN_ShutdownDvdFs);
 	INJECT(0x55F7F0, ADXWIN_SetupSound);
+
 	INJECT(0x55FD70, ADXM_SetupThrd);
-	INJECT(0x55FFD0, ADXM_DestroyThrd);
+	INJECT(0x55FFD0, ADXM_ShutdownThrd);
 	
 	INJECT(0x55E400, ADXF_LoadPartitionNw);
 	INJECT(0x55E570, ADXF_GetPtStat);

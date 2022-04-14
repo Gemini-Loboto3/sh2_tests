@@ -1,5 +1,12 @@
+/*
+* Copyright (C) 2022 Gemini
+* ===============================================================
+* AIX reader module
+* ---------------------------------------------------------------
+* Code to open and parse AIX files.
+* ===============================================================
+*/
 #include "criware.h"
-#include <vector>
 
 int OpenAIX(const char* filename, AIX_Handle**obj)
 {

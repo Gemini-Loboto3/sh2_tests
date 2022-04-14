@@ -1,8 +1,10 @@
 /*
+* Copyright (C) 2022 Gemini
 * ===========================================================
-* FILE SERVER
-* This module uses a thread to fetch data into DirectSound
-* buffer for ADX playback and dynamic AIX playback.
+* File server module
+* -----------------------------------------------------------
+* This module uses a thread to fetch data to DirectSound
+* buffers for ADX and AIX playback.
 * ===========================================================
 */
 #include "criware.h"
@@ -25,6 +27,16 @@ DWORD WINAPI server_thread(LPVOID params)
 	}
 
 	return 0;
+}
+
+void server_create()
+{
+	hServer = CreateThread(nullptr, 0, server_thread, nullptr, CREATE_SUSPENDED, nullptr);
+	if (hServer)
+	{
+		SetThreadPriority(hServer, THREAD_PRIORITY_ABOVE_NORMAL);	// make sure the thread is snappy
+		ResumeThread(hServer);
+	}
 }
 
 void server_destroy()
