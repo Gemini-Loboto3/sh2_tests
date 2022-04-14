@@ -115,15 +115,13 @@ const char* ADXFIC_GetFileName(void* obj, u_long index)
 }
 
 // no need to fill this, it's just some leftover from the XBOX library
-void ADXXB_SetupDvdFs(void* /* ignored */)
+void ADXWIN_SetupDvdFs(void* /* ignored */)
 {
 }
 
-// sets the internal object system to use a DirectSound8 interface
-// fill later with all the necessary methods
-void ADXXB_SetupSound(LPDIRECTSOUND8 pDS8)
+void ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8)
 {
-
+	adxds_SetupSound(pDS8);
 }
 
 // initializes the threads used by the ADX server
@@ -156,7 +154,7 @@ int ADXF_GetPtStat(int)
 // returns an ADXT_STAT value
 int ADXT_GetStat(ADXT_Object* obj)
 {
-	if (obj->obj == nullptr)
+	if (obj->obj == nullptr || obj->stream == nullptr)
 		return ADXT_STAT_STOP;
 
 	return adxds_GetStatus(obj->obj);
@@ -168,13 +166,23 @@ void ADXT_SetOutVol(ADXT_Object *obj, int volume)
 }
 
 // Starts to play ADX file with partition ID and file ID
-int ADXT_StartAfs(ADXT_Object* obj, int patid, int fid)
+void ADXT_StartAfs(ADXT_Object* obj, int patid, int fid)
 {
-	return asf_StartAfs(obj, patid, fid);
+	if (obj->obj && obj->stream)
+		return;
+
+	asf_StartAfs(obj, patid, fid);
 }
 
 void ADXT_Stop(ADXT_Object* obj)
 {
+	if (obj->obj)
+	{
+		adxds_Stop(obj->obj);
+		adxds_Release(obj->obj);
+		obj->obj = nullptr;
+		obj->stream = nullptr;
+	}
 }
 
 void ADXT_StartFname(ADXT_Object* obj, const char* fname)
@@ -182,11 +190,13 @@ void ADXT_StartFname(ADXT_Object* obj, const char* fname)
 	ADXStream *stream;
 
 	OpenADX(fname, &stream);
-}
 
-void ADX_SetupSound(LPDIRECTSOUND8 pDS8)
-{
-	adxds_SetupSound(pDS8);
+	obj->stream = stream;
+	obj->obj = adxds_FindObj();
+
+	adxds_CreateBuffer(obj->obj, stream);
+	obj->obj->loops = true;
+	adxds_Play(obj->obj);
 }
 
 // i have no idea why we even need this
@@ -203,7 +213,7 @@ ADXT_Object* ADXT_Create(int maxch, void* work, u_long work_size)
 	obj->work = work;
 	obj->work_size = work_size;
 	obj->obj = nullptr;
-	obj->streams = nullptr;
+	obj->stream = nullptr;
 
 	return obj;
 }
@@ -211,7 +221,7 @@ ADXT_Object* ADXT_Create(int maxch, void* work, u_long work_size)
 // Destroy an ADXT handle
 void ADXT_Destroy(ADXT_Object* adxt)
 {
-
+	adxt->obj;
 }
 
 void AIX_GetInfo()
@@ -222,16 +232,15 @@ void AIX_GetInfo()
 //
 void AIXP_Stop(AIXP_Object* obj)
 {
-
+	for (int i = 0; i < obj->stream_no; i++)
+	{
+		adxds_Stop(obj->adxt[i].obj);
+		adxds_Release(obj->adxt[i].obj);
+	}
 }
 
 // leave empty
 void AIXP_ExecServer() {}
-
-void AIXP_Destroy(AIXP_Object* obj)
-{
-
-}
 
 AIXP_Object* AIXP_Create(int maxntr, int maxnch, void* work, int worksize)
 {
@@ -247,6 +256,21 @@ AIXP_Object* AIXP_Create(int maxntr, int maxnch, void* work, int worksize)
 	return obj;
 }
 
+void AIXP_Destroy(AIXP_Object* obj)
+{
+	for (int i = 0; i < obj->stream_no; i++)
+	{
+		adxds_Stop(obj->adxt->obj);
+		adxds_Release(obj->adxt->obj);
+		obj->aix->parent->Close();
+		delete obj->aix->parent;
+		delete obj->aix;
+
+		obj->aix->parent = nullptr;
+		obj->aix = nullptr;
+	}
+}
+
 // set if this should loop
 void AIXP_SetLpSw(AIXP_Object* obj, int sw)
 {
@@ -258,16 +282,20 @@ void AIXP_StartFname(AIXP_Object* obj, const char* fname, void* atr)
 
 	OpenAIX(fname, &aix);
 	obj->aix = aix;
+	obj->stream_no = aix->parent->stream_count;
 
-	for (u_long i = 0; aix->parent->streams; i++)
+	for (int i = 0; i < obj->stream_no; i++)
 	{
-		obj->adxt[i].streams = &aix->parent->streams[i];
+		obj->adxt[i].stream = &aix->parent->stream[i];
 		obj->adxt[i].obj = adxds_FindObj();
 	}
 }
 
 ADXT_Object* AIXP_GetAdxt(AIXP_Object* obj, int trno)
 {
+	if (trno >= obj->stream_no)
+		return nullptr;
+
 	return &obj->adxt[trno];
 }
 

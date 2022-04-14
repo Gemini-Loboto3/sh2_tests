@@ -26,7 +26,7 @@ int OpenAIX(const char* filename, AIX_Handle**obj)
 	{
 		ADX_header_AIX adx_head;
 
-		auto s = &parent->streams[i];
+		auto s = &parent->stream[i];
 		s->Read(&adx_head, sizeof(adx_head));
 
 		s->block_size = adx_head.block_size;

@@ -27,21 +27,46 @@ private:
 
 //-------------------------------------------
 // main exposed module
-typedef struct ADXT_Object
+class ADXT_Object
 {
+public:
+	ADXT_Object() : work_size(0),
+		work(nullptr),
+		maxch(0),
+		stream(nullptr),
+		obj(nullptr),
+		volume(0)
+	{}
+	~ADXT_Object()
+	{
+		if(stream) delete stream;
+		if (obj) delete obj;
+
+		stream = nullptr;
+		obj = nullptr;
+	}
+
 	u_long work_size;
 	void* work;
 	int maxch;
-	CriFileStream* streams;
+	CriFileStream* stream;
 	SndObj* obj;
 	int volume;
-} ADXT_Object;
+};
 
-typedef struct AIXP_Object
+class AIXP_Object
 {
+public:
+	AIXP_Object() : stream_no(0),
+		aix(nullptr)
+	{
+
+	}
+
+	int stream_no;
 	AIX_Handle* aix;
 	ADXT_Object adxt[8];
-} AIXP_Object;
+};
 
 #define	ADXF_STAT_STOP			(1)			/*	During standstill			*/
 #define ADXF_STAT_READING		(2)			/*	During data read-in			*/
@@ -56,8 +81,8 @@ typedef struct AIXP_Object
 #define ADXT_STAT_PLAYEND	(5)		/*	Play end							*/
 #define ADXT_STAT_ERROR		(6)		/*	Read-in error outbreak state		*/
 
-void  ADXXB_SetupDvdFs(void* /* ignored */);
-void  ADX_SetupSound(LPDIRECTSOUND8 pDS8);
+void  ADXWIN_SetupDvdFs(void* /* ignored */);
+void  ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8);
 int   ADXM_SetupThrd(int* = nullptr);
 
 void  ADXT_Init();
@@ -66,7 +91,7 @@ void  ADXT_Stop(ADXT_Object* obj);
 int   ADXT_GetStat(ADXT_Object* obj);
 void  ADXT_StartFname(ADXT_Object* obj, const char* fname);
 void  ADXT_SetOutVol(ADXT_Object* obj, int);
-int   ADXT_StartAfs(ADXT_Object* obj, int patid, int fid);
+void  ADXT_StartAfs(ADXT_Object* obj, int patid, int fid);
 
 void  AIX_GetInfo();
 int   ADXF_GetPtStat(int);

@@ -1,13 +1,27 @@
 #pragma once
 
-typedef struct SndObj
+class SndObj
 {
+public:
+	SndObj() : used(0),
+		offset(0),
+		loops(0),
+		volume(0),
+		fmt {0},
+		pBuf(nullptr),
+		str(nullptr)
+	{}
+	~SndObj()
+	{}
+
 	u_long used,
-		offset;
+		offset,
+		loops;
+	int volume;
 	WAVEFORMATEX fmt;
 	LPDIRECTSOUNDBUFFER pBuf;
 	CriFileStream* str;
-} SndObj;
+};
 
 void adxds_SetupSound(LPDIRECTSOUND8 pDS);
 void adxds_Update();
@@ -20,3 +34,4 @@ void adxds_SetVolume(SndObj* obj, int vol);
 void adxds_Play(SndObj* obj);
 void adxds_Stop(SndObj* obj);
 int adxds_GetStatus(SndObj* obj);
+void adxds_Release(SndObj* obj);

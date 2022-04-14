@@ -184,14 +184,12 @@ void Inject_tests()
 	INJECT(0x55F8F0, ADXFIC_GetFileName);
 
 	INJECT(0x55D4C0, AIX_GetInfo);
-	INJECT(0x55F740, ADXXB_SetupDvdFs);
-	INJECT(0x55F7F0, ADX_SetupSound);
+	INJECT(0x55F740, ADXWIN_SetupDvdFs);
+	INJECT(0x55F7F0, ADXWIN_SetupSound);
 	INJECT(0x55FD70, ADXM_SetupThrd);
 	
 	INJECT(0x55E400, ADXF_LoadPartitionNw);
 	INJECT(0x55E570, ADXF_GetPtStat);
-
-	//INJECT(0x560C40, ADXT_Destroy)
 
 	INJECT(0x55BE80, ADXT_StartAfs);
 	INJECT(0x55BF60, ADXT_StartFname);

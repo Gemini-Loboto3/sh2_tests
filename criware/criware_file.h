@@ -7,12 +7,21 @@ class CriFileStream
 {
 public:
 	CriFileStream() :
+		copyright_offset(0),
+		block_size(0),
+		sample_bitdepth(0),
+		channel_count(0),
+		sample_rate(0),
+		total_samples(0),
+		highpass_frequency(0),
 		loop_enabled(0),
 		loop_start_index(0),
 		loop_end_index(0),
 		past_samples(nullptr),
-		sample_index(0)
+		sample_index(0),
+		coefficient{0., 0.}
 	{}
+	virtual ~CriFileStream() {}
 
 	virtual void Read(void* buffer, size_t size) {}
 	virtual void Seek(u_long pos, u_long mode) {}
@@ -36,6 +45,11 @@ public:
 class ADXStream : public CriFileStream
 {
 public:
+	virtual ~ADXStream()
+	{
+		Close();
+	}
+
 	int Open(const char* filename);
 	int Open(HANDLE fp);
 	void Close();
@@ -53,6 +67,11 @@ class AIXStream;
 class AIXParent
 {
 public:
+	virtual ~AIXParent()
+	{
+		Close();
+	}
+
 	void Open(HANDLE fp, u_long stream_count, u_long total_size);
 	void Close();
 
@@ -60,7 +79,7 @@ public:
 	void RequestSeek(u_long stream_id, u_long pos);
 
 	HANDLE fp;
-	AIXStream* streams;
+	AIXStream* stream;
 	u_long stream_count;
 	u_long *chunk_pos;
 #if !INTERLEAVE_FILE
@@ -77,10 +96,12 @@ public:
 	AIXStream() : parent(nullptr),
 		consumed(0),
 		available(0),
-		buffer{0},
+		//buffer{0},
 		stream_id(0)
 	{
 	}
+	virtual ~AIXStream()
+	{}
 
 	virtual void Read(void* buffer, size_t size);
 	virtual void Seek(u_long pos, u_long mode);
@@ -89,5 +110,5 @@ public:
 	u_long consumed,
 		available,
 		stream_id;
-	BYTE buffer[AIX_BUFFER_SIZE];
+	//BYTE buffer[AIX_BUFFER_SIZE];
 };

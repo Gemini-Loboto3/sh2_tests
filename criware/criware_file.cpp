@@ -45,11 +45,11 @@ void AIXParent::Open(HANDLE fp, u_long stream_count, u_long total_size)
 	this->stream_count = stream_count;
 	chunk_pos = new u_long[stream_count];
 
-	streams = new AIXStream[stream_count];
+	stream = new AIXStream[stream_count];
 	for (u_long i = 0; i < stream_count; i++)
 	{
-		streams[i].parent = this;
-		streams[i].stream_id = i;
+		stream[i].parent = this;
+		stream[i].stream_id = i;
 	}
 
 #if INTERLEAVE_FILE
@@ -110,7 +110,14 @@ void AIXParent::Open(HANDLE fp, u_long stream_count, u_long total_size)
 void AIXParent::Close()
 {
 	if (stream_count)
-		delete[] streams;
+		delete[] stream;
+
+#if !INTERLEAVE_FILE
+	delete[] pos;
+	for (u_long i = 0; i < stream_count; i++)
+		delete[] data[i];
+	delete[] data;
+#endif
 
 	CloseHandle(fp);
 }

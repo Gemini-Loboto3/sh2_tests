@@ -5,6 +5,7 @@
 */
 #include "criware.h"
 #include <vector>
+#include <string>
 
 typedef struct AFS_header
 {
@@ -20,10 +21,11 @@ typedef struct AFS_entry
 
 static std::vector<AFS_entry> entries;
 static HANDLE fp;
+static std::string part_name;
 
 int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfile)
 {
-	fp = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	HANDLE fp = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (fp == INVALID_HANDLE_VALUE)
 		return 0;
 
@@ -40,24 +42,30 @@ int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfil
 
 	entries = std::vector<AFS_entry>(head.count);
 	ReadFile(fp, entries.data(), sizeof(AFS_entry) * entries.size(), &read, nullptr);
+	CloseHandle(fp);
+
+	part_name = filename;
 
 	return 1;
 }
 
 int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 {
+	auto ds = adxds_FindObj();
+	if (ds == nullptr)
+		return 0;
+	HANDLE fp = CreateFileA(part_name.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 	SetFilePointer(fp, entries[fid].pos, nullptr, FILE_BEGIN);
 
 	ADXStream* str = new ADXStream;
 	str->Open(fp);
 	OpenADX(str);
 
-	auto ds = adxds_FindObj();
-
-	obj->streams = str;
+	obj->stream = str;
 	obj->obj = ds;
 
 	adxds_CreateBuffer(ds, str);
+	obj->obj->loops = false;
 	adxds_Play(ds);
 
 	return 1;

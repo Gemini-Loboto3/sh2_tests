@@ -64,6 +64,7 @@ int OpenADX(ADXStream* adx)
 	}
 
 	adx_set_coeff(adx);
+	return 1;
 }
 
 int OpenADX(const char* filename, ADXStream** obj)

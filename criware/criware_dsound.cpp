@@ -88,7 +88,7 @@ void adxds_SendData(SndObj *obj)
 		short* ptr1, * ptr2;
 
 		obj->pBuf->Lock(obj->offset, snd_dwBytes, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-		decode_adx_standard(obj->str, ptr1, bytes1 / obj->fmt.nBlockAlign, 1);
+		decode_adx_standard(obj->str, ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
 		obj->pBuf->Unlock(ptr1, bytes1, ptr2, bytes2);
 
 		auto total = snd_dwBytes + obj->offset;
@@ -100,17 +100,24 @@ void adxds_SendData(SndObj *obj)
 
 void adxds_SetVolume(SndObj* obj, int vol)
 {
-	obj->pBuf->SetVolume(vol * 10);
+	obj->volume = vol;
+	if (obj->used && obj->pBuf)
+		obj->pBuf->SetVolume(vol * 10);
 }
 
 void adxds_Play(SndObj* obj)
 {
-	obj->pBuf->Play(0, 0, DSBPLAY_LOOPING);
+	if (obj->used && obj->pBuf)
+		obj->pBuf->Play(0, 0, DSBPLAY_LOOPING);
 }
 
 void adxds_Stop(SndObj* obj)
 {
-	obj->pBuf->Stop();
+	if (obj->used && obj->pBuf)
+	{
+		obj->pBuf->Stop();
+		while (adxds_GetStatus(obj) == ADXT_STAT_PLAYING);
+	}
 }
 
 int adxds_GetStatus(SndObj* obj)
@@ -123,6 +130,17 @@ int adxds_GetStatus(SndObj* obj)
 
 	if(status == DSBSTATUS_LOOPING || status == DSBSTATUS_PLAYING)
 		return ADXT_STAT_PLAYING;
+
+	return ADXT_STAT_PLAYEND;
+}
+
+void adxds_Release(SndObj* obj)
+{
+	if (obj->used)
+	{
+		obj->pBuf->Release();
+		memset(obj, 0, sizeof(*obj));
+	}
 }
 
 void adxds_Update()
@@ -130,6 +148,10 @@ void adxds_Update()
 	for (int i = 0; i < MAX_OBJ; i++)
 	{
 		if (obj_tbl[i].used)
-			adxds_SendData(&obj_tbl[i]);
+		{
+			if (obj_tbl[i].loops == 0 && obj_tbl[i].str->sample_index == obj_tbl[i].str->loop_end_index)
+				adxds_Stop(&obj_tbl[i]);
+			else adxds_SendData(&obj_tbl[i]);
+		}
 	}
 }
