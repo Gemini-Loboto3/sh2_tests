@@ -14,6 +14,17 @@ public:
 	~SndObj()
 	{}
 
+	void CreateBuffer(CriFileStream* stream);
+
+	void Play();
+	void Stop();
+
+	u_long GetPosition();
+	int GetStatus();
+	void SendData();
+	void SetVolume(int vol);
+	void Release();
+
 	u_long used,
 		offset,
 		loops;
@@ -27,6 +38,7 @@ void adxds_SetupSound(LPDIRECTSOUND8 pDS);
 void adxds_Update();
 
 SndObj* adxds_FindObj();
+
 void adxds_CreateBuffer(SndObj* obj, CriFileStream* stream);
 u_long adxds_GetPosition(SndObj* obj);
 void adxds_SendData(SndObj* obj);

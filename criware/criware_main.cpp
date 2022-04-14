@@ -194,9 +194,9 @@ void ADXT_StartFname(ADXT_Object* obj, const char* fname)
 	obj->stream = stream;
 	obj->obj = adxds_FindObj();
 
-	adxds_CreateBuffer(obj->obj, stream);
+	obj->obj->CreateBuffer(stream);
 	obj->obj->loops = true;
-	adxds_Play(obj->obj);
+	obj->obj->Play();
 }
 
 // i have no idea why we even need this
@@ -212,8 +212,6 @@ ADXT_Object* ADXT_Create(int maxch, void* work, u_long work_size)
 	obj->maxch = maxch;
 	obj->work = work;
 	obj->work_size = work_size;
-	obj->obj = nullptr;
-	obj->stream = nullptr;
 
 	return obj;
 }
@@ -221,7 +219,7 @@ ADXT_Object* ADXT_Create(int maxch, void* work, u_long work_size)
 // Destroy an ADXT handle
 void ADXT_Destroy(ADXT_Object* adxt)
 {
-	adxt->obj;
+	delete adxt;
 }
 
 void AIX_GetInfo()
@@ -234,8 +232,8 @@ void AIXP_Stop(AIXP_Object* obj)
 {
 	for (int i = 0; i < obj->stream_no; i++)
 	{
-		adxds_Stop(obj->adxt[i].obj);
-		adxds_Release(obj->adxt[i].obj);
+		obj->adxt[i].obj->Stop();
+		obj->adxt[i].obj->Release();
 	}
 }
 
@@ -258,17 +256,7 @@ AIXP_Object* AIXP_Create(int maxntr, int maxnch, void* work, int worksize)
 
 void AIXP_Destroy(AIXP_Object* obj)
 {
-	for (int i = 0; i < obj->stream_no; i++)
-	{
-		adxds_Stop(obj->adxt->obj);
-		adxds_Release(obj->adxt->obj);
-		obj->aix->parent->Close();
-		delete obj->aix->parent;
-		delete obj->aix;
-
-		obj->aix->parent = nullptr;
-		obj->aix = nullptr;
-	}
+	delete obj;
 }
 
 // set if this should loop

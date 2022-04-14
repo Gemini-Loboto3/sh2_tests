@@ -150,8 +150,19 @@ void adxds_Update()
 		if (obj_tbl[i].used)
 		{
 			if (obj_tbl[i].loops == 0 && obj_tbl[i].str->sample_index == obj_tbl[i].str->loop_end_index)
-				adxds_Stop(&obj_tbl[i]);
-			else adxds_SendData(&obj_tbl[i]);
+				obj_tbl[i].Stop();
+			else obj_tbl[i].SendData();
 		}
 	}
 }
+
+//-------------------------------------
+void SndObj::CreateBuffer(CriFileStream* stream) { adxds_CreateBuffer(this, stream); };
+void SndObj::Play() { adxds_Play(this); }
+void SndObj::Stop() { adxds_Stop(this); }
+
+u_long SndObj::GetPosition() { return adxds_GetPosition(this); }
+int SndObj::GetStatus() { return adxds_GetStatus(this); }
+void SndObj::SendData() { adxds_SendData(this); }
+void SndObj::SetVolume(int vol) { adxds_SetVolume(this, vol); }
+void SndObj::Release() { adxds_Release(this); }

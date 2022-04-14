@@ -199,6 +199,7 @@ void Inject_tests()
 	INJECT(0x55CC60, ADXT_SetOutVol);
 	INJECT(0x5604A0, ADXT_Init);
 
+	INJECT(0x55D540, AIXP_Create);
 	INJECT(0x55D740, AIXP_Destroy);
 	INJECT(0x55D840, AIXP_StartFname);
 	INJECT(0x55D8E0, AIXP_Stop);

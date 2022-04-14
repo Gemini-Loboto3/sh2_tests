@@ -39,11 +39,13 @@ public:
 	{}
 	~ADXT_Object()
 	{
-		if(stream) delete stream;
-		if (obj) delete obj;
-
-		stream = nullptr;
-		obj = nullptr;
+		if (stream) { delete stream; stream = nullptr; }
+		if (obj)
+		{
+			obj->Stop();
+			obj->Release();
+			obj = nullptr;
+		}
 	}
 
 	u_long work_size;
@@ -60,7 +62,22 @@ public:
 	AIXP_Object() : stream_no(0),
 		aix(nullptr)
 	{
+	}
+	~AIXP_Object()
+	{
+		for (int i = 0; i < stream_no; i++)
+		{
+			adxt[i].obj->Stop();
+			adxt[i].obj->Release();
+			adxt[i].obj = nullptr;
+		}
+		memset(adxt, 0, sizeof(adxt));
 
+		if (aix)
+		{
+			delete aix;
+			aix = nullptr;
+		}
 	}
 
 	int stream_no;

@@ -66,10 +66,22 @@ typedef struct AIXE_HEADER
 
 typedef struct AIX {} AIX;
 
-typedef struct AIX_Handle
+class AIX_Handle
 {
+public:
+	AIX_Handle() : parent(nullptr)
+	{}
+	~AIX_Handle()
+	{
+		if (parent)
+		{
+			delete parent;
+			parent = nullptr;
+		}
+	}
+
 	AIXParent* parent;
-} AIX_HANDLE;
+};
 
 int OpenAIX(const char* filename, AIX_Handle** obj);
 void CloseAIX(AIX* obj);

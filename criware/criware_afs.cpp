@@ -64,9 +64,9 @@ int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 	obj->stream = str;
 	obj->obj = ds;
 
-	adxds_CreateBuffer(ds, str);
-	obj->obj->loops = false;
-	adxds_Play(ds);
+	ds->CreateBuffer(str);
+	ds->loops = false;
+	ds->Play();
 
 	return 1;
 }
