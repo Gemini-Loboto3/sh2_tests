@@ -35,6 +35,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 #pragma comment(lib, "dsound.lib")
 #define BUFFER_SIZE		32768
 #define BUFFER_HALF		(BUFFER_SIZE / 2)
+#define BUFFER_QUART	(BUFFER_HALF / 2)
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -81,23 +82,26 @@ DWORD WINAPI test_thread(LPVOID data)
 	DWORD pos, bytes1, bytes2;
 	short *ptr1, *ptr2;
 
+	DWORD snd_dwOffset = 0;
 	while (ctx->looping)
 	{
+		DWORD add = 0;
+		const DWORD snd_dwBytes = BUFFER_QUART;
+
 		ctx->pDB->GetCurrentPosition(&pos, nullptr);
 
-		if (pos < BUFFER_HALF && flip == 0)
+		if (pos - snd_dwOffset < 0)
+			add = BUFFER_SIZE;
+		if (pos + add - snd_dwOffset > 2 * snd_dwBytes + 16)
 		{
-			flip = 1;
-			ctx->pDB->Lock(BUFFER_HALF, BUFFER_HALF, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
+			ctx->pDB->Lock(snd_dwOffset, snd_dwBytes, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
 			decode_adx_standard(ctx->adx, ptr1, bytes1 / ctx->nBlockAlign, 1);
 			ctx->pDB->Unlock(ptr1, bytes1, ptr2, bytes2);
-		}
-		else if (pos >= BUFFER_HALF && flip == 1)
-		{
-			flip = 0;
-			ctx->pDB->Lock(0, BUFFER_HALF, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-			decode_adx_standard(ctx->adx, ptr1, bytes1 / ctx->nBlockAlign, 1);
-			ctx->pDB->Unlock(ptr1, bytes1, ptr2, bytes2);
+
+			auto total = snd_dwBytes + snd_dwOffset;
+			snd_dwOffset = total;
+			if (BUFFER_SIZE <= total)
+				snd_dwOffset = total - BUFFER_SIZE;
 		}
 	}
 
@@ -143,13 +147,13 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	DWORD bytes1, bytes2;
 
 	AIX_Handle* aix;
-	OpenAIX("data\\sound\\adx\\hotel\\bgm_113.aix", &aix);
+	OpenAIX("data\\sound\\adx\\hotel\\bgm_112.aix", &aix);
 	//CloseAIX(aix);
 
 	ADXStream* adx;
 	OpenADX("data\\sound\\adx\\apart\\bgm_014.adx", &adx);
-	//CriFileStream* in = (CriFileStream*)adx;
-	CriFileStream* in = &aix->parent->streams[0];
+	CriFileStream* in = (CriFileStream*)adx;
+	//CriFileStream* in = &aix->parent->streams[4];
 
 	// adx playback buffer
 	desc.lpwfxFormat = &fmt;
