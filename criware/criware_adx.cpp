@@ -1,6 +1,6 @@
 #include "criware.h"
 
-int OpenADX(const char* filename, ADX** obj)
+int OpenADX(const char* filename, ADXStream** obj)
 {
 	*obj = nullptr;
 
@@ -59,7 +59,7 @@ int OpenADX(const char* filename, ADX** obj)
 
 	adx_set_coeff(adx);
 
-	*obj = (ADX*)adx;
+	*obj = adx;
 
 	return 1;
 }

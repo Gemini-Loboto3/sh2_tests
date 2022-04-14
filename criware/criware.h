@@ -141,7 +141,7 @@ typedef struct ADX {} ADX;
 void adx_set_coeff(CriFileStream* adx);
 unsigned decode_adx_standard(CriFileStream* adx, short* buffer, unsigned samples_needed, bool looping_enabled);
 
-int OpenADX(const char* filename, ADX** obj);
+int OpenADX(const char* filename, ADXStream** obj);
 void CloseADX(ADX* obj);
 
 //-------------------------------------------
@@ -164,21 +164,22 @@ typedef struct AIX_HEADER
 	DWORD magic;			// 00 'AIXF'
 	BE32 next;				// 04 offset to next header
 	BE32 unk8,				// 08
-		unkC,				// 0C
+		unkC,				// 0C sector alignment?
 		unk10,				// 10
 		unk14,				// 14
 		unk18,				// 18
 		unk1C,				// 1C
 		unk20,				// 20
-		unk24,				// 24
+		data_size,			// 24 amount of interleaved ADX data
 		total_samples;		// 28
 	BE32 frequency,			// 2C frequency for all streams
 		unk30,				// 30
 		unk34,				// 34
 		unk38,				// 38
 		unk3C;				// 3C
-	BE32 stream_no,			// 40 number of interleaved streams
-		unk44;				// 44 no idea, always zero
+	BYTE stream_count,			// 40 number of interleaved streams
+		unk41[3];			// 41
+	BE32 unk44;				// 44 no idea, always zero
 	AIX_ENTRY entries[759];	// 48 supplementary stream data
 } AIX_HEADER;
 
@@ -205,5 +206,10 @@ typedef struct AIXE_HEADER
 
 typedef struct AIX {} AIX;
 
-int OpenAIX(const char* filename, AIX** obj);
+typedef struct AIX_Handle
+{
+	AIXParent* parent;
+} AIX_HANDLE;
+
+int OpenAIX(const char* filename, AIX_Handle** obj);
 void CloseAIX(AIX* obj);

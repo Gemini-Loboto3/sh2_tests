@@ -1,12 +1,7 @@
 #include "criware.h"
 #include <vector>
 
-typedef struct AIX_Handle
-{
-	AIXParent *parent;
-} AIX_HANDLE;
-
-int OpenAIX(const char* filename, AIX**obj)
+int OpenAIX(const char* filename, AIX_Handle**obj)
 {
 	*obj = nullptr;
 
@@ -25,7 +20,9 @@ int OpenAIX(const char* filename, AIX**obj)
 	DWORD read;
 	ReadFile(fp, &head, sizeof(head), &read, nullptr);
 
-	for (DWORD i = 0; i < head.stream_no.dw(); i++)
+	parent->Open(fp, head.stream_count, head.data_size.dw());
+
+	for (DWORD i = 0; i < head.stream_count; i++)
 	{
 		ADX_header_AIX adx_head;
 
@@ -39,9 +36,15 @@ int OpenAIX(const char* filename, AIX**obj)
 		s->sample_rate = adx_head.sample_rate.dw();
 		s->total_samples = adx_head.total_samples.dw();
 		s->copyright_offset = adx_head.copyright_offset.w();
+
+		s->loop_enabled = 1;
+		s->loop_start_index = 0;
+		s->loop_end_index = s->total_samples;
+
+		adx_set_coeff(s);
 	}
 
-	*obj = (AIX*)aix;
+	*obj = aix;
 	return 1;
 }
 

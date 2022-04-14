@@ -142,13 +142,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	short *ptr1, *ptr2;
 	DWORD bytes1, bytes2;
 
-	AIX* aix;
+	AIX_Handle* aix;
 	OpenAIX("data\\sound\\adx\\hotel\\bgm_113.aix", &aix);
-	CloseAIX(aix);
+	//CloseAIX(aix);
 
-	ADX* adx;
+	ADXStream* adx;
 	OpenADX("data\\sound\\adx\\apart\\bgm_014.adx", &adx);
-	CriFileStream* in = (CriFileStream*)adx;
+	//CriFileStream* in = (CriFileStream*)adx;
+	CriFileStream* in = &aix->parent->streams[0];
 
 	// adx playback buffer
 	desc.lpwfxFormat = &fmt;
@@ -160,13 +161,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	// perform first filling
 	pDB->Lock(0, BUFFER_SIZE, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-	decode_adx_standard((CriFileStream*)adx, ptr1, bytes1 / fmt.nBlockAlign, 1);
+	decode_adx_standard(in, ptr1, bytes1 / fmt.nBlockAlign, 1);
 	pDB->Unlock(ptr1, bytes1, ptr2, bytes2);
 	
 	Thread_data ctx;
 	ctx.pDB = pDB;
-	ctx.adx = (CriFileStream*)adx;
+	ctx.adx = in;
 	ctx.nBlockAlign = fmt.nBlockAlign;
+	ctx.looping = 1;
 	HANDLE hThread = CreateThread(nullptr, 0, test_thread, (LPVOID)&ctx, CREATE_SUSPENDED, nullptr);
 	SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
 
@@ -205,7 +207,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	WaitForSingleObject(hThread, INFINITE);
 	pDB->Stop();
-	CloseADX(adx);
+	//CloseADX(adx);
 
 	pDB->Release();
 	pDB_main->Release();
