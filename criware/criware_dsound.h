@@ -8,24 +8,33 @@ enum DSOBJ_STATE
 	DSOS_ENDED
 };
 
+typedef void (*SndCbPlayEnd)(LPVOID);
+
 class SndObj
 {
 public:
-	SndObj() : used(0),
-		offset(0),
+	SndObj() : offset(0),
+		used(0),
 		loops(0),
-		volume(0),
-		set_volume(0),
 		stopped(0),
+		set_volume(0),
 		trans_lock(0),
-		fmt {0},
+		volume(0),
 		pBuf(nullptr),
-		str(nullptr)
+		str(nullptr),
+		fmt{ 0 },
+		cbPlayEnd(nullptr),
+		cbPlayContext(nullptr)
 	{}
 	~SndObj()
 	{}
 
 	void CreateBuffer(CriFileStream* stream);
+	void SetEndCallback(SndCbPlayEnd cb, LPVOID ctx)
+	{
+		cbPlayEnd = cb;
+		cbPlayContext = ctx;
+	}
 
 	void Play();
 	void Stop();
@@ -41,11 +50,14 @@ public:
 		loops : 1,
 		stopped : 1,
 		set_volume : 1,
-		trans_lock : 1;		// failsafe for locking release when it's transferring
+		trans_lock : 1;		// failsafe for locking data transfers
 	int volume;
 	WAVEFORMATEX fmt;
 	LPDIRECTSOUNDBUFFER pBuf;
 	CriFileStream* str;
+
+	SndCbPlayEnd cbPlayEnd;
+	LPVOID cbPlayContext;
 };
 
 void ds_SetupSound(LPDIRECTSOUND8 pDS);

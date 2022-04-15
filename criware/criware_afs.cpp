@@ -22,52 +22,90 @@ typedef struct AFS_entry
 		size;
 } AFS_entry;
 
-static std::vector<AFS_entry> entries;
-static HANDLE fp;
-static std::string part_name;
+class AFS_Object
+{
+public:
+	AFS_Object() : fp(INVALID_HANDLE_VALUE)
+	{}
+	~AFS_Object()
+	{
+		Close();
+	}
+
+	void Open(const char* filename)
+	{
+		fp = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		part_name = filename;
+	}
+
+	void Close()
+	{
+		if (fp != INVALID_HANDLE_VALUE)
+		{
+			CloseHandle(fp);
+			fp = INVALID_HANDLE_VALUE;
+		}
+	}
+
+	std::vector<AFS_entry> entries;
+	HANDLE fp;
+	std::string part_name;
+};
+
+AFS_Object afs;
 
 int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfile)
 {
-	HANDLE fp = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-	if (fp == INVALID_HANDLE_VALUE)
+	afs.Open(filename);
+	if (afs.fp == INVALID_HANDLE_VALUE)
 		return 0;
 
 	AFS_header head;
 
 	DWORD read;
-	ReadFile(fp, &head, sizeof(head), &read, nullptr);
+	ReadFile(afs.fp, &head, sizeof(head), &read, nullptr);
 
 	if (head.magic != '\x00SFA' && head.magic != 'AFS\x00')
 	{
-		CloseHandle(fp);
+		afs.Close();
 		return 0;
 	}
 
-	entries = std::vector<AFS_entry>(head.count);
-	ReadFile(fp, entries.data(), sizeof(AFS_entry) * entries.size(), &read, nullptr);
-	CloseHandle(fp);
+	afs.entries = std::vector<AFS_entry>(head.count);
+	ReadFile(afs.fp, afs.entries.data(), sizeof(AFS_entry) * afs.entries.size(), &read, nullptr);
+	//CloseHandle(fp);
 
-	part_name = filename;
+	afs.part_name = filename;
 
 	return 1;
 }
 
+static void cb(LPVOID ctx)
+{
+	ADXT_Object* obj = (ADXT_Object*)ctx;
+
+	obj->obj->Release();
+	obj->obj = nullptr;
+	delete obj->stream;
+	obj->stream = nullptr;
+	obj->initialized = 0;
+}
+
 int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 {
-	HANDLE fp = CreateFileA(part_name.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-	if (fp == INVALID_HANDLE_VALUE)
-		return 0;
-
-	SetFilePointer(fp, entries[fid].pos, nullptr, FILE_BEGIN);
+	//HANDLE fp = CreateFileA(part_name.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	//if (fp == INVALID_HANDLE_VALUE)
+	//	return 0;
 
 	ADXStream* stream = new ADXStream;
-	stream->Open(fp);
+	stream->Open(afs.fp, afs.entries[fid].pos);
 	OpenADX(stream);
 
 	obj->initialized = 1;
 	obj->stream = stream;
 	obj->obj = ds_FindObj();
 	obj->obj->loops = stream->loop_enabled;
+	obj->obj->SetEndCallback(cb, obj);
 
 	obj->obj->CreateBuffer(stream);
 	obj->obj->Play();

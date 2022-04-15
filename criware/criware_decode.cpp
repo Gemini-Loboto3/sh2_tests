@@ -79,10 +79,7 @@ static __inline u_long bitstream_read(bitstream* stream, u_long bits)
 	if (stream->bitpos == 0)
 		b = (stream->read >> 4) & 0xf;
 	else
-	{
 		b = stream->read & 0xF;
-		//stream->fp->Read(&stream->read, 1);
-	}
 #endif
 
 	return b;

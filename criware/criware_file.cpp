@@ -20,31 +20,66 @@ int ADXStream::Open(const char* filename)
 		return S_FALSE;
 
 	start = 0;
+	Seek(0, SEEK_SET);
+
 	return S_OK;
 }
 
-int ADXStream::Open(HANDLE _fp)
+int ADXStream::Open(HANDLE _fp, u_long pos)
 {
 	fp = _fp;
-	start = SetFilePointer(fp, 0, nullptr, FILE_CURRENT);
+	start = pos;
+#if STREAM_CACHING
+	Seek(0, SEEK_SET);
+#endif
 
 	return S_OK;
 }
 
 void ADXStream::Close()
 {
-	CloseHandle(fp);
+	if(start == 0)
+		CloseHandle(fp);
 }
 
 void ADXStream::Read(void* buffer, size_t size)
 {
 	DWORD read;
+#if STREAM_CACHING
+	if (size + pos_cache <= STREAM_CACHE_SIZE)
+	{
+		memcpy(buffer, &cache[pos_cache], size);
+		pos_cache += size;
+	}
+	else
+	{
+		BYTE* b = (BYTE*)buffer;
+		size_t nsize = (size + pos_cache) % STREAM_CACHE_SIZE;
+		memcpy(b, cache, nsize);
+		ReadFile(fp, cache, STREAM_CACHE_SIZE, &read, nullptr);
+		pos_cache = size - nsize;
+		memcpy(&b[nsize], cache, pos_cache);
+	}
+#else
 	ReadFile(fp, buffer, size, &read, nullptr);
+#endif
 }
 
 void ADXStream::Seek(u_long pos, u_long mode)
 {
+#if STREAM_CACHING
+	u_long npos = (pos + start) / STREAM_CACHE_SIZE;
+	if (npos != old_pos)
+	{
+		DWORD read;
+		SetFilePointer(fp, npos * STREAM_CACHE_SIZE, nullptr, mode);
+		ReadFile(fp, cache, STREAM_CACHE_SIZE, &read, nullptr);
+		old_pos = npos;
+	}
+	pos_cache = (pos + start) % STREAM_CACHE_SIZE;
+#else
 	SetFilePointer(fp, pos + start, nullptr, mode);
+#endif
 }
 
 // ------------------------------------------------

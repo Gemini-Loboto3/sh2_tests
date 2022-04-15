@@ -225,10 +225,8 @@ void Inject_tests()
 	memset((void*)0x56008C, 0x90, 0x56008F - 0x56008C);	// SetEvent in adxm_destroy_thrd
 #endif
 
-	pRenderTarget = pRenderTarget;
-
 	//INJECT_EXT(0x24A66F0, DirectInput8CreateProxy);
-	INJECT(0x4010F0, WndProcedureEx);
+	//INJECT(0x4010F0, WndProcedureEx);
 
 	//Inject_xaudio2();
 }

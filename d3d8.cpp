@@ -4,12 +4,21 @@
 HMODULE dll = nullptr;
 FARPROC fp[4];
 
+void _DebugSetMute()
+{
+}
+
 void SetD3D8()
 {
-	char path[MAX_PATH];
-	CopyMemory(path + GetSystemDirectoryA(path, MAX_PATH - 9), "\\d3d8.dll", 10);
+	dll = LoadLibraryW(L"sh2ee.dll");
+	if (!dll)
+	{
+		char path[MAX_PATH];
+		CopyMemory(path + GetSystemDirectoryA(path, MAX_PATH - 9), "\\d3d8.dll", 10);
 
-	dll = LoadLibraryA(path);
+		dll = LoadLibraryA(path);
+	}
+
 	if (dll)
 	{
 		fp[0] = GetProcAddress(dll, "ValidatePixelShader");
@@ -17,6 +26,8 @@ void SetD3D8()
 		fp[2] = GetProcAddress(dll, "DebugSetMute");
 		fp[3] = GetProcAddress(dll, "Direct3DCreate8");
 	}
+
+
 }
 
 void ClearD3D8()
@@ -27,7 +38,9 @@ void ClearD3D8()
 void __declspec(naked) ValidatePixelShader()  { __asm {jmp fp[0 * 4]}; }
 void __declspec(naked) ValidateVertexShader() { __asm {jmp fp[1 * 4]}; }
 void __declspec(naked) DebugSetMute()         { __asm {jmp fp[2 * 4]}; }
-
+#if 1
+void __declspec(naked) _Direct3DCreate8()     { __asm {jmp fp[3 * 4]}; }
+#else
 typedef IDirect3D8* (WINAPI *create)(UINT SDKVersion);
 
 IDirect3D8* WINAPI _Direct3DCreate8(UINT SDKVersion)
@@ -37,5 +50,5 @@ IDirect3D8* WINAPI _Direct3DCreate8(UINT SDKVersion)
 	proxy->d3d8 = d3d8;
 
 	return (IDirect3D8*)proxy;
-	//__asm {jmp fp[3 * 4]};
 }
+#endif

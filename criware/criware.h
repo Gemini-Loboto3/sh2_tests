@@ -4,7 +4,6 @@
 #include <dsound.h>
 #include <vector>
 #include <string>
-#include "..\xxhash.h"
 
 void ADX_lock();
 void ADX_unlock();
@@ -133,9 +132,9 @@ public:
 #define ADXT_STAT_ERROR		(6)		/*	Read-in error outbreak state		*/
 
 // windows exclusive code
-void  ADXWIN_SetupDvdFs(void* = nullptr);
-void  ADXWIN_ShutdownDvdFs();
-void  ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8);
+void ADXWIN_SetupDvdFs(void* = nullptr);
+void ADXWIN_ShutdownDvdFs();
+void ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8);
 
 // threads
 void ADXM_SetupThrd(int* = nullptr);

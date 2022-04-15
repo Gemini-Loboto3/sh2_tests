@@ -41,7 +41,9 @@ static void list_data_folder(const char* path, ADXFIC_Object& dir)
 					ADX_Entry entry;
 					entry.filename = filter;
 					entry.size = GetFileSize(fp, nullptr);
+#if ADXFIC_USE_HASHES
 					entry.hash = XXH64(entry.filename.c_str(), entry.filename.size(), 0);
+#endif
 					CloseHandle(fp);
 					dir.files.push_back(entry);
 				}
@@ -52,6 +54,7 @@ static void list_data_folder(const char* path, ADXFIC_Object& dir)
 	}
 }
 
+#if ADXFIC_USE_HASHES
 int quickfind(ADX_Entry* f, size_t size, XXH64_hash_t hash)
 {
 	int first = 0,
@@ -71,14 +74,17 @@ int quickfind(ADX_Entry* f, size_t size, XXH64_hash_t hash)
 
 	return -1;
 }
+#endif
 
 ADXFIC_Object* adx_ficCreate(const char *dname)
 {
 	ADXFIC_Object* dir = new ADXFIC_Object;
 	// list all the files
 	list_data_folder(dname, *dir);
+#if ADXFIC_USE_HASHES
 	// sort entries by hashes for binary find
 	std::sort(dir->files.begin(), dir->files.end(), [](ADX_Entry& a, ADX_Entry& b) { return a.hash < b.hash; });
+#endif
 
 	return dir;
 }

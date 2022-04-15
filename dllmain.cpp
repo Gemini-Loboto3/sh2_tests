@@ -184,7 +184,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	ADXM_SetupThrd();
 
 	auto obj0 = ds_FindObj();
-	ds_CreateBuffer(obj0, &aix->parent->stream[0]);
+	ds_CreateBuffer(obj0, adx);
 
 	//adxds_SetVolume(obj0, -100);
 	//adxds_SetVolume(obj1, -300);

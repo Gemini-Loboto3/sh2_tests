@@ -1,6 +1,8 @@
 #pragma once
 
 #define INTERLEAVE_FILE		0
+#define STREAM_CACHING		1
+#define STREAM_CACHE_SIZE	2048
 
 // generic streaming interface
 class CriFileStream
@@ -45,13 +47,22 @@ public:
 class ADXStream : public CriFileStream
 {
 public:
+	ADXStream() : fp(nullptr),
+		start(0)
+#if STREAM_CACHING
+		, cache{0},
+		pos_cache(0),
+		old_pos(-1)
+#endif
+	{}
+
 	virtual ~ADXStream()
 	{
 		Close();
 	}
 
 	int Open(const char* filename);
-	int Open(HANDLE fp);
+	int Open(HANDLE fp, u_long pos);
 	void Close();
 
 	virtual void Read(void* buffer, size_t size);
@@ -59,6 +70,10 @@ public:
 
 	HANDLE fp;
 	u_long start;
+#if STREAM_CACHING
+	BYTE cache[STREAM_CACHE_SIZE];
+	u_long pos_cache, old_pos;
+#endif
 };
 
 // AIX streaming interface, a hell of caching and deinterleaving

@@ -180,12 +180,17 @@ void ds_Update()
 		if (obj->used && obj->pBuf && obj->stopped == 0)
 		{
 			if (obj->loops == 0 && obj->str->sample_index == obj->str->loop_end_index)
+			{
 				obj->Stop();
+				if (obj->cbPlayEnd)
+					obj->cbPlayEnd(obj->cbPlayContext);
+				//obj->Release();
+			}
 			else
 			{
 				if (obj->set_volume)
 				{
-					obj->SetVolume(obj_tbl[i].volume);
+					obj->SetVolume(obj->volume);
 					obj->set_volume = 0;
 				}
 				obj->SendData();
