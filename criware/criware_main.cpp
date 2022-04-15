@@ -120,7 +120,6 @@ void ADXT_StartAfs(ADXT_Object* obj, int patid, int fid)
 
 void ADXT_Stop(ADXT_Object* obj)
 {
-	ADX_lock();
 	if (obj->obj)
 	{
 		ds_Stop(obj->obj);
@@ -129,7 +128,6 @@ void ADXT_Stop(ADXT_Object* obj)
 		obj->stream = nullptr;
 		obj->initialized = 0;
 	}
-	ADX_unlock();
 }
 
 void ADXT_StartFname(ADXT_Object* obj, const char* fname)
@@ -198,13 +196,11 @@ void AIXP_Destroy(AIXP_Object* obj)
 
 void AIXP_Stop(AIXP_Object* obj)
 {
-	ADX_lock();
 	for (int i = 0; i < obj->stream_no; i++)
 	{
 		obj->adxt[i].obj->Stop();
 		obj->adxt[i].obj->Release();
 	}
-	ADX_unlock();
 }
 
 // set if this should loop

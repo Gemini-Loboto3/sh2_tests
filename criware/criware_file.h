@@ -17,9 +17,9 @@ public:
 		loop_enabled(0),
 		loop_start_index(0),
 		loop_end_index(0),
-		past_samples(nullptr),
+		past_samples{ 0 },
 		sample_index(0),
-		coefficient{0., 0.}
+		coefficient{ 0, 0 }
 	{}
 	virtual ~CriFileStream() {}
 
@@ -36,9 +36,9 @@ public:
 		loop_enabled,
 		loop_start_index,
 		loop_end_index;
-	int* past_samples;
+	int past_samples[16];
 	u_long sample_index;
-	double coefficient[2];
+	short coefficient[2];
 };
 
 // ADX streaming interface, very simple

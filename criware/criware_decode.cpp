@@ -18,17 +18,18 @@ typedef signed int   int_fast32_t;
 
 void adx_set_coeff(CriFileStream* adx)
 {
-#define M_PI acos(-1.0)
+	const double M_SQRT2 = 1.4142135623730951;
+	const double M_PI = 3.141592653589793;
+
 	double a, b, c;
-	a = sqrt(2.0) - cos(2.0 * M_PI * ((double)adx->highpass_frequency / adx->sample_rate));
-	b = sqrt(2.0) - 1.0;
+	a = M_SQRT2 - cos(2.0 * M_PI * (double)adx->highpass_frequency / (double)adx->sample_rate);
+	b = M_SQRT2 - 1.0;
 	c = (a - sqrt((a + b) * (a - b))) / b;
 
 	// double coefficient[2];
-	adx->coefficient[0] = c * 2.0;
-	adx->coefficient[1] = -(c * c);
+	adx->coefficient[0] = (short)lrint(c * 2. * (double)(1 << 12));
+	adx->coefficient[1] = (short)lrint(-(c * c) * (double)(1 << 12));
 	adx->sample_index = 0;
-	adx->past_samples = new int[adx->channel_count * 2];
 	memset(adx->past_samples, 0, adx->channel_count * 4);
 }
 
@@ -74,9 +75,6 @@ static __inline u_long bitstream_read(bitstream* stream, u_long bits)
 static __inline int sign_extend(u_long base, u_long bits)
 {
 	int res = base;
-
-	if (res != 0)
-		res = res;
 
 	return (res << (32 - bits)) >> (32 - bits);
 }
@@ -139,19 +137,19 @@ unsigned decode_adx_standard(CriFileStream* adx, int16_t* buffer, unsigned sampl
 			for (unsigned i = 0; i < adx->channel_count; ++i)
 			{
 				// Predict the next sample
-				double sample_prediction = adx->coefficient[0] * adx->past_samples[i * 2 + 0] + adx->coefficient[1] * adx->past_samples[i * 2 + 1];
+				int sample_prediction = (adx->coefficient[0] * adx->past_samples[i * 2 + 0] + adx->coefficient[1] * adx->past_samples[i * 2 + 1]) >> 12;
 
 				// Seek to the sample offset, read and sign extend it to a 32bit integer
 				// The sign extension will also need to include a endian adjustment if there are more than 8 bits
 				bitstream_seek(&stream, started_at + adx->sample_bitdepth * sample_offset + adx->block_size * 8 * i);
-				int_fast32_t sample_error = bitstream_read(&stream, adx->sample_bitdepth);
+				int sample_error = bitstream_read(&stream, adx->sample_bitdepth);
 				sample_error = sign_extend(sample_error, adx->sample_bitdepth);
 
 				// Scale the error correction value
 				sample_error *= scale[i];
 
 				// Calculate the sample by combining the prediction with the error correction
-				int_fast32_t sample = sample_error + (int_fast32_t)sample_prediction;
+				int sample = sample_error + sample_prediction;
 
 				// Update the past samples with the newer sample
 				adx->past_samples[i * 2 + 1] = adx->past_samples[i * 2 + 0];

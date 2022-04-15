@@ -52,7 +52,7 @@ void ds_CreateBuffer(SndObj *obj, CriFileStream* stream)
 	DSBUFFERDESC desc = { 0 };
 	desc.dwSize = sizeof(desc);
 	desc.lpwfxFormat = &obj->fmt;
-	desc.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY;
+	desc.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | /*DSBCAPS_CTRL3D |*/ DSBCAPS_CTRLFREQUENCY | DSBCAPS_GETCURRENTPOSITION2 /*| DSBCAPS_LOCSOFTWARE*/;
 	desc.dwBufferBytes = BUFFER_SIZE;
 	if (FAILED(pDS8->CreateSoundBuffer(&desc, &obj->pBuf, nullptr)))
 		MessageBoxA(nullptr, "error", __FUNCTION__, MB_OK);
@@ -82,6 +82,8 @@ u_long ds_GetPosition(SndObj* obj)
 
 void adxds_SendData(SndObj *obj)
 {
+	obj->trans_lock = 1;
+
 	u_long add = 0, pos;
 	const DWORD snd_dwBytes = BUFFER_QUART;
 
@@ -95,6 +97,7 @@ void adxds_SendData(SndObj *obj)
 		DWORD bytes1, bytes2;
 		short* ptr1, * ptr2;
 
+		ADX_lock();
 		obj->pBuf->Lock(obj->offset, snd_dwBytes, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
 		auto needed = decode_adx_standard(obj->str, ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
 		if (needed && obj->loops == 0)
@@ -103,12 +106,15 @@ void adxds_SendData(SndObj *obj)
 			memset(&ptr1[(bytes1 - needed) / 2], 0, needed);
 		}
 		obj->pBuf->Unlock(ptr1, bytes1, ptr2, bytes2);
+		ADX_unlock();
 
 		auto total = snd_dwBytes + obj->offset;
 		obj->offset = total;
 		if (BUFFER_SIZE <= total)
 			obj->offset = total - BUFFER_SIZE;
 	}
+
+	obj->trans_lock = 0;
 }
 
 void ds_SetVolume(SndObj* obj, int vol)
@@ -160,6 +166,7 @@ void ds_Release(SndObj* obj)
 {
 	if (obj->used && obj->pBuf)
 	{
+		while (obj->trans_lock);	// wait if it's transferring data in the thread
 		obj->pBuf->Release();
 		memset(obj, 0, sizeof(*obj));
 	}

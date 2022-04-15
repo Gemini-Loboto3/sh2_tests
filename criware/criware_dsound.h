@@ -17,6 +17,7 @@ public:
 		volume(0),
 		set_volume(0),
 		stopped(0),
+		trans_lock(0),
 		fmt {0},
 		pBuf(nullptr),
 		str(nullptr)
@@ -35,12 +36,13 @@ public:
 	void SetVolume(int vol);
 	void Release();
 
-	u_long used,
-		offset,
-		loops,
-		stopped;
-	int volume,
-		set_volume;
+	u_long offset;
+	u_long used : 1,
+		loops : 1,
+		stopped : 1,
+		set_volume : 1,
+		trans_lock : 1;		// failsafe for locking release when it's transferring
+	int volume;
 	WAVEFORMATEX fmt;
 	LPDIRECTSOUNDBUFFER pBuf;
 	CriFileStream* str;
