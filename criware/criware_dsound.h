@@ -16,6 +16,7 @@ public:
 		loops(0),
 		volume(0),
 		set_volume(0),
+		stopped(0),
 		fmt {0},
 		pBuf(nullptr),
 		str(nullptr)
@@ -36,7 +37,8 @@ public:
 
 	u_long used,
 		offset,
-		loops;
+		loops,
+		stopped;
 	int volume,
 		set_volume;
 	WAVEFORMATEX fmt;

@@ -9,6 +9,19 @@
 */
 #include "criware.h"
 
+//
+CRITICAL_SECTION ADX_crit;
+void ADX_lock()
+{
+	EnterCriticalSection(&ADX_crit);
+}
+
+void ADX_unlock()
+{
+	LeaveCriticalSection(&ADX_crit);
+}
+
+
 ADXFIC_Object* ADXFIC_Create(const char* dname, int mode, char *work, int wksize)
 {
 	return adx_ficCreate(dname);
@@ -42,12 +55,14 @@ void ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8)
 // in our case it just creates one thread running in parallel with the game
 void ADXM_SetupThrd(int* priority /* ignored */)
 {
+	InitializeCriticalSection(&ADX_crit);
 	server_create();
 }
 
 // destroys the ADX threads
 void ADXM_ShutdownThrd()
 {
+	DeleteCriticalSection(&ADX_crit);
 	server_destroy();
 }
 
@@ -105,6 +120,7 @@ void ADXT_StartAfs(ADXT_Object* obj, int patid, int fid)
 
 void ADXT_Stop(ADXT_Object* obj)
 {
+	ADX_lock();
 	if (obj->obj)
 	{
 		ds_Stop(obj->obj);
@@ -113,6 +129,7 @@ void ADXT_Stop(ADXT_Object* obj)
 		obj->stream = nullptr;
 		obj->initialized = 0;
 	}
+	ADX_unlock();
 }
 
 void ADXT_StartFname(ADXT_Object* obj, const char* fname)
@@ -181,11 +198,13 @@ void AIXP_Destroy(AIXP_Object* obj)
 
 void AIXP_Stop(AIXP_Object* obj)
 {
+	ADX_lock();
 	for (int i = 0; i < obj->stream_no; i++)
 	{
 		obj->adxt[i].obj->Stop();
 		obj->adxt[i].obj->Release();
 	}
+	ADX_unlock();
 }
 
 // set if this should loop

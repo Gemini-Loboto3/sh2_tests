@@ -6,6 +6,9 @@
 #include <string>
 #include "..\xxhash.h"
 
+void ADX_lock();
+void ADX_unlock();
+
 //-------------------------------------------
 // big endian helpers
 class BE16

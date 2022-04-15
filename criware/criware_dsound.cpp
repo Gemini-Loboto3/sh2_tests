@@ -136,6 +136,7 @@ void ds_Stop(SndObj* obj)
 
 		int s;
 		do { s = ds_GetStatus(obj); } while (s == DSOS_LOOPING || s == DSOS_PLAYING);
+		obj->stopped = 1;
 	}
 }
 
@@ -169,7 +170,7 @@ void ds_Update()
 	for (int i = 0; i < MAX_OBJ; i++)
 	{
 		auto obj = &obj_tbl[i];
-		if (obj->used && obj->pBuf)
+		if (obj->used && obj->pBuf && obj->stopped == 0)
 		{
 			if (obj->loops == 0 && obj->str->sample_index == obj->str->loop_end_index)
 				obj->Stop();
