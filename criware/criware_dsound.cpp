@@ -60,7 +60,12 @@ void ds_CreateBuffer(SndObj *obj, CriFileStream* stream)
 	DWORD bytes1, bytes2;
 	short* ptr1, * ptr2;
 	obj->pBuf->Lock(0, BUFFER_SIZE, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-	decode_adx_standard(stream, ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
+	auto needed = decode_adx_standard(stream, ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
+	if (needed && obj->loops == 0)
+	{
+		needed *= obj->fmt.nBlockAlign;
+		memset(&ptr1[(bytes1 - needed) / 2], 0, needed);
+	}
 	obj->pBuf->Unlock(ptr1, bytes1, ptr2, bytes2);
 
 	obj->used = 1;
@@ -92,7 +97,7 @@ void adxds_SendData(SndObj *obj)
 
 		obj->pBuf->Lock(obj->offset, snd_dwBytes, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
 		auto needed = decode_adx_standard(obj->str, ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
-		if (needed)
+		if (needed && obj->loops == 0)
 		{
 			needed *= obj->fmt.nBlockAlign;
 			memset(&ptr1[(bytes1 - needed) / 2], 0, needed);

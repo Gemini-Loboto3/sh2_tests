@@ -67,7 +67,7 @@ int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 	obj->initialized = 1;
 	obj->stream = stream;
 	obj->obj = ds_FindObj();
-	obj->obj->loops = false;
+	obj->obj->loops = stream->loop_enabled;
 
 	obj->obj->CreateBuffer(stream);
 	obj->obj->Play();

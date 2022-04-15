@@ -191,6 +191,8 @@ void AIXP_Stop(AIXP_Object* obj)
 // set if this should loop
 void AIXP_SetLpSw(AIXP_Object* obj, int sw)
 {
+	for(int i = 0; i < obj->stream_no; i++)
+		obj->adxt[0].obj->loops = sw;
 }
 
 void AIXP_StartFname(AIXP_Object* obj, const char* fname, void* atr)
