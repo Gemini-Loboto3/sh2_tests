@@ -9,9 +9,9 @@ typedef struct ADX_Entry
 	DWORD size;
 } ADX_Entry;
 
-typedef struct ADX_Dir
+typedef struct ADXFIC_Object
 {
 	std::vector<ADX_Entry> files;
-} ADX_Dir;
+} ADXFIC_Object;
 
-ADX_Dir* adx_ficCreate(const char* dname);
+ADXFIC_Object* adx_ficCreate(const char* dname);

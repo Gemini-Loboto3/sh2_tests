@@ -141,12 +141,15 @@ LRESULT __stdcall WndProcedureEx(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
 {
 	switch (msg)
 	{
-	case WM_INPUT:
-		pDInput->ProcessRaw(lParam, wParam);
-		return 0;
-	case WM_INPUT_DEVICE_CHANGE:
-		pDInput->UpdateRaw(lParam, wParam);
-		return 0;
+	case WM_SETCURSOR:
+		ShowCursor(true);
+		break;
+	//case WM_INPUT:
+	//	pDInput->ProcessRaw(lParam, wParam);
+	//	return 0;
+	//case WM_INPUT_DEVICE_CHANGE:
+	//	pDInput->UpdateRaw(lParam, wParam);
+	//	return 0;
 	}
 
 	return WndProcedure(hWnd, msg, wParam, lParam);
@@ -179,6 +182,8 @@ void Inject_tests()
 	MakePageWritable(0x401000, 0x24A8FFF - 0x401000);
 
 #if 1
+	memset((void*)0x408A4A, 0x90, 5);	// remove Performance_set_thread
+
 	INJECT(0x55F850, ADXFIC_Create);
 	INJECT(0x55F890, ADXFIC_GetNumFiles);
 	INJECT(0x55F8F0, ADXFIC_GetFileName);
@@ -203,7 +208,7 @@ void Inject_tests()
 	INJECT(0x5604A0, ADXT_Init);
 	INJECT(0x560580, ADXT_Finish);
 
-	INJECT(0x55D4C0, AIX_GetInfo);
+	INJECT(0x55D4C0, AIXP_Init);
 	INJECT(0x55D540, AIXP_Create);
 	INJECT(0x55D740, AIXP_Destroy);
 	INJECT(0x55D840, AIXP_StartFname);
@@ -223,7 +228,7 @@ void Inject_tests()
 	pRenderTarget = pRenderTarget;
 
 	//INJECT_EXT(0x24A66F0, DirectInput8CreateProxy);
-	//INJECT(0x4010F0, WndProcedureEx);
+	INJECT(0x4010F0, WndProcedureEx);
 
 	//Inject_xaudio2();
 }

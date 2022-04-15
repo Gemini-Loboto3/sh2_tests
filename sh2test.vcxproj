@@ -179,6 +179,7 @@
     <ClInclude Include="criware\criware_adx.h" />
     <ClInclude Include="criware\criware_adxfic.h" />
     <ClInclude Include="criware\criware.h" />
+    <ClInclude Include="criware\criware_afs.h" />
     <ClInclude Include="criware\criware_aix.h" />
     <ClInclude Include="criware\criware_dsound.h" />
     <ClInclude Include="criware\criware_file.h" />

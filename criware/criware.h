@@ -43,9 +43,9 @@ private:
 #include "criware_file.h"
 #include "criware_dsound.h"
 #include "criware_aix.h"
+#include "criware_adx.h"
 #include "criware_adxfic.h"
 #include "criware_server.h"
-#include "criware_adx.h"
 
 //-------------------------------------------
 // main exposed module
@@ -63,13 +63,13 @@ public:
 	~ADXT_Object()
 	{
 		initialized = 0;
-		if (stream) { delete stream; stream = nullptr; }
 		if (obj)
 		{
 			obj->Stop();
 			obj->Release();
 			obj = nullptr;
 		}
+		if (stream) { delete stream; stream = nullptr; }
 	}
 
 	CriFileStream* stream;
@@ -114,6 +114,8 @@ public:
 	ADXT_Object adxt[8];
 };
 
+#include "criware_afs.h"
+
 #define	ADXF_STAT_STOP			(1)			/*	During standstill			*/
 #define ADXF_STAT_READING		(2)			/*	During data read-in			*/
 #define ADXF_STAT_READEND		(3)			/*	Data read-in end			*/
@@ -127,35 +129,37 @@ public:
 #define ADXT_STAT_PLAYEND	(5)		/*	Play end							*/
 #define ADXT_STAT_ERROR		(6)		/*	Read-in error outbreak state		*/
 
-void  ADXWIN_SetupDvdFs(void* /* ignored */);
+// windows exclusive code
+void  ADXWIN_SetupDvdFs(void* = nullptr);
 void  ADXWIN_ShutdownDvdFs();
 void  ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8);
 
+// threads
 void ADXM_SetupThrd(int* = nullptr);
 void ADXM_ShutdownThrd();
 
-void  ADXT_Init();
-void  ADXT_Finish();
+// adx talk interface
+void ADXT_Init();
+void ADXT_Finish();
 ADXT_Object* ADXT_Create(int maxch, void* work, u_long work_size);
-void  ADXT_Stop(ADXT_Object* obj);
-int   ADXT_GetStat(ADXT_Object* obj);
-void  ADXT_StartFname(ADXT_Object* obj, const char* fname);
-void  ADXT_SetOutVol(ADXT_Object* obj, int);
-void  ADXT_StartAfs(ADXT_Object* obj, int patid, int fid);
+void ADXT_Stop(ADXT_Object* obj);
+int  ADXT_GetStat(ADXT_Object* obj);
+void ADXT_StartFname(ADXT_Object* obj, const char* fname);
+void ADXT_SetOutVol(ADXT_Object* obj, int);
+void ADXT_StartAfs(ADXT_Object* obj, int patid, int fid);
 
-void  AIX_GetInfo();
-int   ADXF_GetPtStat(int);
+// hierarchy interface
+ADXFIC_Object* ADXFIC_Create(const char* dname, int mode, char* work, int wksize);
+void ADXFIC_Destroy(ADXFIC_Object* obj);
+u_long ADXFIC_GetNumFiles(ADXFIC_Object* obj);
+const char* ADXFIC_GetFileName(ADXFIC_Object* obj, u_long index);
 
-ADX_Dir* ADXFIC_Create(const char* dname, int mode, char* work, int wksize);
-void ADXFIC_Destroy(ADX_Dir* obj);
-u_long ADXFIC_GetNumFiles(ADX_Dir* obj);
-const char* ADXFIC_GetFileName(ADX_Dir* obj, u_long index);
+// partition interface
+int ADXF_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfile);
+int ADXF_GetPtStat(int);
 
-int   ADXF_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfile);
-
-int   asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfile);
-int   asf_StartAfs(ADXT_Object* obj, int patid, int fid);
-
+// aix interface
+int  AIXP_Init();
 void AIXP_Stop(AIXP_Object *obj);
 void AIXP_ExecServer();
 void AIXP_Destroy(AIXP_Object *obj);

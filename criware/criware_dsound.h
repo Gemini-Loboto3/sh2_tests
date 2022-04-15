@@ -15,6 +15,7 @@ public:
 		offset(0),
 		loops(0),
 		volume(0),
+		set_volume(0),
 		fmt {0},
 		pBuf(nullptr),
 		str(nullptr)
@@ -36,7 +37,8 @@ public:
 	u_long used,
 		offset,
 		loops;
-	int volume;
+	int volume,
+		set_volume;
 	WAVEFORMATEX fmt;
 	LPDIRECTSOUNDBUFFER pBuf;
 	CriFileStream* str;

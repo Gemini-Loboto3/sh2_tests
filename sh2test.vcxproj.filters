@@ -65,6 +65,9 @@
     <ClInclude Include="criware\criware_adx.h">
       <Filter>criware</Filter>
     </ClInclude>
+    <ClInclude Include="criware\criware_afs.h">
+      <Filter>criware</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dxrinput\device_dinput.cpp">

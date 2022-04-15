@@ -60,7 +60,7 @@ void ds_CreateBuffer(SndObj *obj, CriFileStream* stream)
 	DWORD bytes1, bytes2;
 	short* ptr1, * ptr2;
 	obj->pBuf->Lock(0, BUFFER_SIZE, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-	decode_adx_standard(stream, ptr1, bytes1 / obj->fmt.nBlockAlign, 1);
+	decode_adx_standard(stream, ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
 	obj->pBuf->Unlock(ptr1, bytes1, ptr2, bytes2);
 
 	obj->used = 1;
@@ -91,7 +91,12 @@ void adxds_SendData(SndObj *obj)
 		short* ptr1, * ptr2;
 
 		obj->pBuf->Lock(obj->offset, snd_dwBytes, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-		decode_adx_standard(obj->str, ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
+		auto needed = decode_adx_standard(obj->str, ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
+		if (needed)
+		{
+			needed *= obj->fmt.nBlockAlign;
+			memset(&ptr1[(bytes1 - needed) / 2], 0, needed);
+		}
 		obj->pBuf->Unlock(ptr1, bytes1, ptr2, bytes2);
 
 		auto total = snd_dwBytes + obj->offset;
@@ -103,9 +108,13 @@ void adxds_SendData(SndObj *obj)
 
 void ds_SetVolume(SndObj* obj, int vol)
 {
+	if (vol < -1000)
+		vol = -1000;
+
 	obj->volume = vol;
 	if (obj->used && obj->pBuf)
 		obj->pBuf->SetVolume(vol * 10);
+	else obj->set_volume = 1;
 }
 
 void ds_Play(SndObj* obj)
@@ -119,21 +128,23 @@ void ds_Stop(SndObj* obj)
 	if (obj->used && obj->pBuf)
 	{
 		obj->pBuf->Stop();
-		while (ds_GetStatus(obj) == ADXT_STAT_PLAYING);
+
+		int s;
+		do { s = ds_GetStatus(obj); } while (s == DSOS_LOOPING || s == DSOS_PLAYING);
 	}
 }
 
 int ds_GetStatus(SndObj* obj)
 {
-	if (obj->used == 0)
+	if (obj->used == 0 || obj->pBuf == nullptr)
 		return DSOS_UNUSED;
 
 	DWORD status;
 	obj->pBuf->GetStatus(&status);
 
-	if (status == DSBSTATUS_LOOPING)
+	if (status & DSBSTATUS_LOOPING)
 		return DSOS_LOOPING;
-	if (status == DSBSTATUS_PLAYING)
+	if (status & DSBSTATUS_PLAYING)
 		return DSOS_PLAYING;
 
 	return DSOS_ENDED;
@@ -141,7 +152,7 @@ int ds_GetStatus(SndObj* obj)
 
 void ds_Release(SndObj* obj)
 {
-	if (obj->used)
+	if (obj->used && obj->pBuf)
 	{
 		obj->pBuf->Release();
 		memset(obj, 0, sizeof(*obj));
@@ -152,11 +163,20 @@ void ds_Update()
 {
 	for (int i = 0; i < MAX_OBJ; i++)
 	{
-		if (obj_tbl[i].used)
+		auto obj = &obj_tbl[i];
+		if (obj->used && obj->pBuf)
 		{
-			if (obj_tbl[i].loops == 0 && obj_tbl[i].str->sample_index == obj_tbl[i].str->loop_end_index)
-				obj_tbl[i].Stop();
-			else obj_tbl[i].SendData();
+			if (obj->loops == 0 && obj->str->sample_index == obj->str->loop_end_index)
+				obj->Stop();
+			else
+			{
+				if (obj->set_volume)
+				{
+					obj->SetVolume(obj_tbl[i].volume);
+					obj->set_volume = 0;
+				}
+				obj->SendData();
+			}
 		}
 	}
 }

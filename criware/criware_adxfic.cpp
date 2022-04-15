@@ -10,7 +10,7 @@
 #include "criware.h"
 #include <algorithm>
 
-static void list_data_folder(const char* path, ADX_Dir& dir)
+static void list_data_folder(const char* path, ADXFIC_Object& dir)
 {
 	WIN32_FIND_DATAA data;
 
@@ -72,9 +72,9 @@ int quickfind(ADX_Entry* f, size_t size, XXH64_hash_t hash)
 	return -1;
 }
 
-ADX_Dir* adx_ficCreate(const char *dname)
+ADXFIC_Object* adx_ficCreate(const char *dname)
 {
-	ADX_Dir* dir = new ADX_Dir;
+	ADXFIC_Object* dir = new ADXFIC_Object;
 	// list all the files
 	list_data_folder(dname, *dir);
 	// sort entries by hashes for binary find

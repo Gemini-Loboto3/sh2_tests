@@ -144,11 +144,17 @@ HRESULT IDirect3DDevice8Proxy::GetDisplayMode(D3DDISPLAYMODE* pMode)
 HRESULT IDirect3DDevice8Proxy::GetCreationParameters(D3DDEVICE_CREATION_PARAMETERS* pParameters)
 { return d3d8->GetCreationParameters(pParameters); }
 HRESULT IDirect3DDevice8Proxy::SetCursorProperties(UINT XHotSpot, UINT YHotSpot, IDirect3DSurface8* pCursorBitmap)
-{ return d3d8->SetCursorProperties(XHotSpot, YHotSpot, pCursorBitmap); }
+{
+	return d3d8->SetCursorProperties(XHotSpot, YHotSpot, pCursorBitmap);
+}
 void IDirect3DDevice8Proxy::SetCursorPosition(int X, int Y, DWORD Flags)
-{ d3d8->SetCursorPosition(X, Y, Flags); }
+{
+	d3d8->SetCursorPosition(X, Y, Flags);
+}
 BOOL IDirect3DDevice8Proxy::ShowCursor(BOOL bShow)
-{ return d3d8->ShowCursor(bShow); }
+{
+	return d3d8->ShowCursor(bShow);
+}
 HRESULT IDirect3DDevice8Proxy::CreateAdditionalSwapChain(D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DSwapChain8** pSwapChain)
 { return d3d8->CreateAdditionalSwapChain(pPresentationParameters, pSwapChain); }
 HRESULT IDirect3DDevice8Proxy::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)

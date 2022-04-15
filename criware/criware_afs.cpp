@@ -54,23 +54,23 @@ int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfil
 
 int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 {
-	auto ds = ds_FindObj();
-	if (ds == nullptr)
-		return 0;
 	HANDLE fp = CreateFileA(part_name.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	if (fp == INVALID_HANDLE_VALUE)
+		return 0;
+
 	SetFilePointer(fp, entries[fid].pos, nullptr, FILE_BEGIN);
 
-	ADXStream* str = new ADXStream;
-	str->Open(fp);
-	OpenADX(str);
+	ADXStream* stream = new ADXStream;
+	stream->Open(fp);
+	OpenADX(stream);
 
 	obj->initialized = 1;
-	obj->stream = str;
-	obj->obj = ds;
+	obj->stream = stream;
+	obj->obj = ds_FindObj();
+	obj->obj->loops = false;
 
-	ds->CreateBuffer(str);
-	ds->loops = false;
-	ds->Play();
+	obj->obj->CreateBuffer(stream);
+	obj->obj->Play();
 
 	return 1;
 }

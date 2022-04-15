@@ -16,7 +16,6 @@ int OpenADX(ADXStream* adx)
 	if (head.magic.w() != 0x8000)
 	{
 		adx->Close();
-		delete adx;
 		return 0;
 	}
 
@@ -66,7 +65,6 @@ int OpenADX(ADXStream* adx)
 	}
 	else
 	{
-		adx->Close();
 		delete adx;
 		return 0;
 	}
@@ -92,7 +90,6 @@ int OpenADX(const char* filename, ADXStream** obj)
 
 	if (head.magic.w() != 0x8000)
 	{
-		adx->Close();
 		delete adx;
 		return 0;
 	}
@@ -127,7 +124,6 @@ int OpenADX(const char* filename, ADXStream** obj)
 	}
 	else
 	{
-		adx->Close();
 		delete adx;
 		return 0;
 	}

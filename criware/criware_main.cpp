@@ -9,22 +9,22 @@
 */
 #include "criware.h"
 
-ADX_Dir* ADXFIC_Create(const char* dname, int mode, char *work, int wksize)
+ADXFIC_Object* ADXFIC_Create(const char* dname, int mode, char *work, int wksize)
 {
 	return adx_ficCreate(dname);
 }
 
-void ADXFIC_Destroy(ADX_Dir* obj)
+void ADXFIC_Destroy(ADXFIC_Object* obj)
 {
 	delete obj;
 }
 
-u_long ADXFIC_GetNumFiles(ADX_Dir* obj)
+u_long ADXFIC_GetNumFiles(ADXFIC_Object* obj)
 {
 	return obj->files.size();
 }
 
-const char* ADXFIC_GetFileName(ADX_Dir* obj, u_long index)
+const char* ADXFIC_GetFileName(ADXFIC_Object* obj, u_long index)
 {
 	return obj->files[index].filename.c_str();
 }
@@ -67,18 +67,18 @@ int ADXF_GetPtStat(int)
 // returns an ADXT_STAT value
 int ADXT_GetStat(ADXT_Object* obj)
 {
-	if (obj->initialized == 0)
-		return ADXT_STAT_STOP;
-
-	switch (obj->obj->GetStatus())
+	if (obj->initialized == 1 && obj->obj)
 	{
-	case DSOS_LOOPING:
-	case DSOS_PLAYING:
-		return ADXT_STAT_PLAYING;
-	case DSOS_UNUSED:
-		return ADXT_STAT_STOP;
-	case DSOS_ENDED:
-		return ADXT_STAT_PLAYEND;
+		switch (obj->obj->GetStatus())
+		{
+		case DSOS_LOOPING:
+		case DSOS_PLAYING:
+			return ADXT_STAT_PLAYING;
+		case DSOS_UNUSED:
+			return ADXT_STAT_STOP;
+		case DSOS_ENDED:
+			return ADXT_STAT_PLAYEND;
+		}
 	}
 
 	return ADXT_STAT_STOP;
@@ -86,13 +86,21 @@ int ADXT_GetStat(ADXT_Object* obj)
 
 void ADXT_SetOutVol(ADXT_Object *obj, int volume)
 {
-	obj->volume;
+	if(obj && obj->obj)
+		obj->obj->SetVolume(volume);
 }
 
 // Starts to play ADX file with partition ID and file ID
 void ADXT_StartAfs(ADXT_Object* obj, int patid, int fid)
 {
-	asf_StartAfs(obj, patid, fid);
+	if (obj == nullptr)
+		return;
+	
+	if (obj->initialized == 0)
+	{
+		ADXT_Stop(obj);
+		asf_StartAfs(obj, patid, fid);
+	}
 }
 
 void ADXT_Stop(ADXT_Object* obj)
@@ -103,6 +111,7 @@ void ADXT_Stop(ADXT_Object* obj)
 		ds_Release(obj->obj);
 		obj->obj = nullptr;
 		obj->stream = nullptr;
+		obj->initialized = 0;
 	}
 }
 
@@ -114,9 +123,9 @@ void ADXT_StartFname(ADXT_Object* obj, const char* fname)
 	obj->initialized = 1;
 	obj->stream = stream;
 	obj->obj = ds_FindObj();
+	obj->obj->loops = true;
 
 	obj->obj->CreateBuffer(stream);
-	obj->obj->loops = true;
 	obj->obj->Play();
 }
 
@@ -145,8 +154,8 @@ void ADXT_Destroy(ADXT_Object* adxt)
 	delete adxt;
 }
 
-void AIX_GetInfo()
-{}
+// leave empty
+int AIXP_Init() { return 0; }
 
 // leave empty
 void AIXP_ExecServer() {}
@@ -196,8 +205,8 @@ void AIXP_StartFname(AIXP_Object* obj, const char* fname, void* atr)
 	{
 		obj->adxt[i].stream = &aix->parent->stream[i];
 		obj->adxt[i].obj = ds_FindObj();
-		obj->adxt[i].obj->CreateBuffer(obj->adxt[i].stream);
 		obj->adxt[i].obj->loops = true;
+		obj->adxt[i].obj->CreateBuffer(obj->adxt[i].stream);
 	}
 
 	for (int i = 0; i < obj->stream_no; i++)
@@ -219,19 +228,18 @@ ADXT_Object* AIXP_GetAdxt(AIXP_Object* obj, int trno)
 
 int AIXP_GetStat(AIXP_Object* obj)
 {
-	if (obj->initialized == 0)
-		return AIXP_STAT_STOP;
-
-	switch (obj->adxt[0].obj->GetStatus())
+	if (obj->initialized == 1 && obj->adxt[0].obj)
 	{
-	case DSOS_PLAYING:
-	case DSOS_LOOPING:
-		return AIXP_STAT_PLAYEND;
-	case DSOS_UNUSED:
-		return AIXP_STAT_STOP;
-	case DSOS_ENDED:
-		return AIXP_STAT_PLAYEND;
+		switch (obj->adxt[0].obj->GetStatus())
+		{
+		case DSOS_PLAYING:
+		case DSOS_LOOPING:
+			return AIXP_STAT_PLAYING;
+		case DSOS_UNUSED:
+			return AIXP_STAT_STOP;
+		case DSOS_ENDED:
+			return AIXP_STAT_PLAYEND;
+		}
 	}
-
 	return AIXP_STAT_STOP;
 }
