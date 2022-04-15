@@ -9,6 +9,7 @@
 * ===============================================================
 */
 #include <math.h>
+#include <algorithm>
 #include "criware.h"
 
 typedef short        int16_t;
@@ -42,6 +43,7 @@ typedef struct bitstream
 
 static __inline void bitstream_seek(bitstream* stream, u_long pos)
 {
+#if 0
 	stream->bitpos = pos % 8;
 	stream->fp->Seek(pos / 8, FILE_BEGIN);
 
@@ -50,12 +52,17 @@ static __inline void bitstream_seek(bitstream* stream, u_long pos)
 		stream->fp->Read(&stream->read, 1);
 		stream->read >>= stream->bitpos;
 	}
+#else
+	stream->bitpos = (pos % 8) / 4;
+	stream->fp->Seek(pos / 8, FILE_BEGIN);
+	stream->fp->Read(&stream->read, 1);
+#endif
 }
 
 static __inline u_long bitstream_read(bitstream* stream, u_long bits)
 {
 	u_long b = 0;
-
+#if 0
 	for (u_long i = 0; i < bits; i++)
 	{
 		if (stream->bitpos == 0)
@@ -68,6 +75,15 @@ static __inline u_long bitstream_read(bitstream* stream, u_long bits)
 		stream->read >>= 1;
 		stream->bitpos = (stream->bitpos + 1) % 8;
 	}
+#else
+	if (stream->bitpos == 0)
+		b = (stream->read >> 4) & 0xf;
+	else
+	{
+		b = stream->read & 0xF;
+		//stream->fp->Read(&stream->read, 1);
+	}
+#endif
 
 	return b;
 }
@@ -118,14 +134,27 @@ unsigned decode_adx_standard(CriFileStream* adx, int16_t* buffer, unsigned sampl
 			samples_can_get = adx->total_samples - adx->sample_index;
 
 		// Calculate the bit address of the start of the frame that sample_index resides in and record that location
+#if 1
 		unsigned long started_at = (adx->copyright_offset + 4 + adx->sample_index / samples_per_block * adx->block_size * adx->channel_count) * 8;
+#else
+		unsigned long started_at = (adx->copyright_offset + 4 + adx->sample_index / samples_per_block * adx->block_size * adx->channel_count);
+#endif
 
+#if 1
 		// Read the scale values from the start of each block in this frame
 		for (unsigned i = 0; i < adx->channel_count; ++i)
 		{
-			bitstream_seek(&stream, started_at + adx->block_size * i * 8);
-			scale[i] = sbetole((short)bitstream_read(&stream, 16));
+			adx->Seek(started_at / 8 + adx->block_size * i, SEEK_SET);
+			adx->Read(&scale[i], 2);
+			scale[i] = sbetole(scale[i]);
+			//bitstream_seek(&stream, started_at + adx->block_size * i * 8);
+			//scale[i] = sbetole((short)bitstream_read(&stream, 16));
 		}
+#else
+		adx->Seek(started_at, SEEK_SET);
+		adx->Read(&scale[0], 2);
+		scale[0] = sbetole(scale[0]);
+#endif
 
 		// Pre-calculate the stop value for sample_offset
 		unsigned sample_endoffset = sample_offset + samples_can_get;
@@ -151,15 +180,19 @@ unsigned decode_adx_standard(CriFileStream* adx, int16_t* buffer, unsigned sampl
 				// Calculate the sample by combining the prediction with the error correction
 				int sample = sample_error + sample_prediction;
 
+				// Clamp the decoded sample to the valid range for a 16bit integer
+				if (sample > SHRT_MAX) sample = SHRT_MAX;
+				else if (sample < SHRT_MIN) sample = SHRT_MIN;
+
 				// Update the past samples with the newer sample
 				adx->past_samples[i * 2 + 1] = adx->past_samples[i * 2 + 0];
 				adx->past_samples[i * 2 + 0] = sample;
 
-				// Clamp the decoded sample to the valid range for a 16bit integer
-				if (sample > 32767)
-					sample = 32767;
-				else if (sample < -32768)
-					sample = -32768;
+				//
+				//if (sample > 32767)
+				//	sample = 32767;
+				//else if (sample < -32768)
+				//	sample = -32768;
 
 				// Save the sample to the buffer then advance one place
 				*buffer++ = sample;

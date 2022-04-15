@@ -36,7 +36,7 @@ public:
 		loop_enabled,
 		loop_start_index,
 		loop_end_index;
-	int past_samples[16];
+	short past_samples[16];
 	u_long sample_index;
 	short coefficient[2];
 };

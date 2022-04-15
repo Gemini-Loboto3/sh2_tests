@@ -150,7 +150,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	ADXStream* adx;
 	OpenADX("data\\sound\\adx\\apart\\bgm_014.adx", &adx);
 	CriFileStream* in0 = (CriFileStream*)adx;
-	CriFileStream* in1 = &aix->parent->streams[4];
+	CriFileStream* in1 = &aix->parent->stream[4];
 
 #if 0
 	// adx playback buffer
@@ -180,28 +180,20 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	pDB->Play(0, 0, DSBPLAY_LOOPING);
 	ResumeThread(hThread);
 #else
-	ADX_SetupSound(pDS);
+	ADXWIN_SetupSound(pDS);
 	ADXM_SetupThrd();
 
-	auto obj0 = adxds_FindObj();
-	adxds_CreateBuffer(obj0, &aix->parent->streams[0]);
-	auto obj1 = adxds_FindObj();
-	adxds_CreateBuffer(obj1, &aix->parent->streams[1]);
-	auto obj2 = adxds_FindObj();
-	adxds_CreateBuffer(obj2, &aix->parent->streams[2]);
-	auto obj3 = adxds_FindObj();
-	adxds_CreateBuffer(obj3, &aix->parent->streams[3]);
-	auto obj4 = adxds_FindObj();
-	adxds_CreateBuffer(obj4, &aix->parent->streams[4]);
+	auto obj0 = ds_FindObj();
+	ds_CreateBuffer(obj0, &aix->parent->stream[0]);
 
 	//adxds_SetVolume(obj0, -100);
 	//adxds_SetVolume(obj1, -300);
 
-	adxds_Play(obj0);
-	adxds_Play(obj1);
-	adxds_Play(obj2);
-	adxds_Play(obj3);
-	adxds_Play(obj4);
+	ds_Play(obj0);
+	//adxds_Play(obj1);
+	//adxds_Play(obj2);
+	//adxds_Play(obj3);
+	//adxds_Play(obj4);
 #endif
 
 	ShowWindow(hWnd, SW_SHOW);
