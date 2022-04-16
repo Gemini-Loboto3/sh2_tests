@@ -68,25 +68,6 @@ typedef struct ADX_headerV4
 		dummy5;					// 3C
 } ADX_headerV4;
 
-typedef struct ADX_Handle
-{
-	HANDLE fp;
-	//
-	u_long copyright_offset,
-		block_size,
-		sample_bitdepth,
-		channel_count,
-		sample_rate,
-		total_samples,
-		highpass_frequency,
-		loop_enabled,
-		loop_start_index,
-		loop_end_index;
-	int* past_samples;		// Previously decoded samples from each channel, zeroed at start (size = 2*channel_count)
-	u_long sample_index;		// sample_index is the index of sample set that needs to be decoded next
-	double coefficient[2];
-} ADX_HANDLE;
-
 void adx_set_coeff(CriFileStream* adx);
 unsigned decode_adx_standard(CriFileStream* adx, short* buffer, unsigned samples_needed, bool looping_enabled);
 

@@ -34,7 +34,7 @@ public:
 
 	void Open(const char* filename)
 	{
-		fp = ADX_OpenFile(filename);
+		fp = ADXF_OpenFile(filename);
 		part_name = filename;
 	}
 
@@ -42,7 +42,7 @@ public:
 	{
 		if (fp != INVALID_HANDLE_VALUE)
 		{
-			ADX_CloseFile(fp);
+			ADXF_CloseFile(fp);
 			fp = INVALID_HANDLE_VALUE;
 		}
 	}
@@ -62,7 +62,7 @@ int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfil
 
 	AFS_header head;
 
-	ADX_ReadFile(afs.fp, &head, sizeof(head));
+	ADXF_ReadFile(afs.fp, &head, sizeof(head));
 
 	if (head.magic != '\x00SFA' && head.magic != 'AFS\x00')
 	{
@@ -71,7 +71,7 @@ int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfil
 	}
 
 	afs.entries = std::vector<AFS_entry>(head.count);
-	ADX_ReadFile(afs.fp, afs.entries.data(), sizeof(AFS_entry) * afs.entries.size());
+	ADXF_ReadFile(afs.fp, afs.entries.data(), sizeof(AFS_entry) * afs.entries.size());
 
 	afs.part_name = filename;
 
@@ -86,7 +86,7 @@ static void cb(LPVOID ctx)
 	obj->obj = nullptr;
 	delete obj->stream;
 	obj->stream = nullptr;
-	obj->initialized = 0;
+	obj->state = ADXT_STAT_PLAYEND;
 }
 
 int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
@@ -99,7 +99,7 @@ int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 		return 0;
 	}
 
-	obj->initialized = 1;
+	obj->state = ADXT_STAT_PLAYING;
 	obj->stream = stream;
 	obj->obj = ds_FindObj();
 	obj->obj->loops = stream->loop_enabled;

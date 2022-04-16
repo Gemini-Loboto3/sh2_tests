@@ -1,11 +1,4 @@
 #pragma once
-
-#define	AIXP_STAT_STOP		(0)		/*	During standstill					*/
-#define AIXP_STAT_PREP		(1)		/*	During play preparation				*/
-#define AIXP_STAT_PLAYING	(2)		/*	During decode and play				*/
-#define AIXP_STAT_PLAYEND	(3)		/*	Play end							*/
-#define AIXP_STAT_ERROR		(4)		/*	Play end							*/
-
 //-------------------------------------------
 // generic header
 typedef struct AIX_ENRTY

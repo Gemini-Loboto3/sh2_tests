@@ -184,7 +184,6 @@ void ds_Update()
 				obj->Stop();
 				if (obj->cbPlayEnd)
 					obj->cbPlayEnd(obj->cbPlayContext);
-				//obj->Release();
 			}
 			else
 			{

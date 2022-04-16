@@ -12,17 +12,17 @@
 // ------------------------------------------------
 // Helpers for debloating file code
 // ------------------------------------------------
-HANDLE ADX_OpenFile(const char* filename)
+HANDLE ADXF_OpenFile(const char* filename)
 {
 	return CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 }
 
-void ADX_CloseFile(HANDLE fp)
+void ADXF_CloseFile(HANDLE fp)
 {
 	CloseHandle(fp);
 }
 
-void ADX_ReadFile(HANDLE fp, void* buffer, size_t size)
+void ADXF_ReadFile(HANDLE fp, void* buffer, size_t size)
 {
 	DWORD read;
 	ReadFile(fp, buffer, size, &read, nullptr);
@@ -37,7 +37,7 @@ void ADX_ReadFile(HANDLE fp, void* buffer, size_t size)
 // ------------------------------------------------
 int ADXStream::Open(const char* filename)
 {
-	fp = ADX_OpenFile(filename);
+	fp = ADXF_OpenFile(filename);
 	if (fp == INVALID_HANDLE_VALUE)
 		return S_FALSE;
 
@@ -78,7 +78,7 @@ void ADXStream::Read(void* buffer, size_t size)
 		memcpy(dst, &cache[pos_cache], remainder);
 		dst += remainder;
 		size -= remainder;
-		ADX_ReadFile(fp, cache, STREAM_CACHE_SIZE);
+		ADXF_ReadFile(fp, cache, STREAM_CACHE_SIZE);
 		pos_cache = 0;
 		last_pos++;
 	}
@@ -86,7 +86,7 @@ void ADXStream::Read(void* buffer, size_t size)
 	memcpy(dst, &cache[pos_cache], size);
 	pos_cache += size;
 #else
-	ADX_ReadFile(fp, buffer, size);
+	ADXF_ReadFile(fp, buffer, size);
 #endif
 }
 
@@ -98,7 +98,7 @@ void ADXStream::Seek(u_long pos, u_long mode)
 	{
 		DWORD read;
 		SetFilePointer(fp, npos * STREAM_CACHE_SIZE, nullptr, mode);
-		ADX_ReadFile(fp, cache, STREAM_CACHE_SIZE, &read, nullptr);
+		ADXF_ReadFile(fp, cache, STREAM_CACHE_SIZE, &read, nullptr);
 		last_pos = npos;
 	}
 	pos_cache = (pos + start) % STREAM_CACHE_SIZE;
@@ -170,7 +170,7 @@ void AIX_Demuxer::Close()
 void AIX_Demuxer::InitCache()
 {
 	pos_cache = 0;
-	ADX_ReadFile(fp, cache, STREAM_CACHE_SIZE);
+	ADXF_ReadFile(fp, cache, STREAM_CACHE_SIZE);
 }
 #endif
 
@@ -190,11 +190,11 @@ void AIX_Demuxer::Read(void* buffer, size_t size)
 		{
 			size_t blocks = size / STREAM_CACHE_SIZE;
 			for (u_long i = 0; i < blocks; i++, dst += STREAM_CACHE_SIZE, size -= STREAM_CACHE_SIZE)
-				ADX_ReadFile(fp, dst, STREAM_CACHE_SIZE);
+				ADXF_ReadFile(fp, dst, STREAM_CACHE_SIZE);
 		}
 		// refill the cache
 		pos_cache = 0;
-		ADX_ReadFile(fp, cache, STREAM_CACHE_SIZE);		// cache more
+		ADXF_ReadFile(fp, cache, STREAM_CACHE_SIZE);		// cache more
 	}
 
 	if (size)
@@ -203,7 +203,7 @@ void AIX_Demuxer::Read(void* buffer, size_t size)
 		pos_cache += size;
 	}
 #else
-	ADX_ReadFile(fp, buffer, size);
+	ADXF_ReadFile(fp, buffer, size);
 #endif
 }
 

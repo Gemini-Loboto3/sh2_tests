@@ -69,7 +69,10 @@ int ADXF_GetPtStat(int)
 // returns an ADXT_STAT value
 int ADXT_GetStat(ADXT_Object* obj)
 {
-	if (obj->initialized == 1 && obj->obj)
+#if 1
+	return obj->state;
+#else
+	if (obj->state == 1 && obj->obj)
 	{
 		switch (obj->obj->GetStatus())
 		{
@@ -84,6 +87,7 @@ int ADXT_GetStat(ADXT_Object* obj)
 	}
 
 	return ADXT_STAT_STOP;
+#endif
 }
 
 void ADXT_SetOutVol(ADXT_Object *obj, int volume)
@@ -98,7 +102,7 @@ void ADXT_StartAfs(ADXT_Object* obj, int patid, int fid)
 	if (obj == nullptr)
 		return;
 	
-	if (obj->initialized == 0)
+	if (obj->state == 0)
 	{
 		ADXT_Stop(obj);
 		asf_StartAfs(obj, patid, fid);
@@ -115,7 +119,7 @@ void ADXT_StartFname(ADXT_Object* obj, const char* fname)
 	ADXStream *stream;
 	OpenADX(fname, &stream);
 
-	obj->initialized = 1;
+	obj->state = ADXT_STAT_PLAYING;
 	obj->stream = stream;
 	obj->obj = ds_FindObj();
 	obj->obj->loops = true;
@@ -204,11 +208,11 @@ void AIXP_StartFname(AIXP_Object* obj, const char* fname, void* atr)
 
 	for (int i = 0; i < obj->stream_no; i++)
 	{
-		obj->adxt[i].initialized = 1;
+		obj->adxt[i].state = ADXT_STAT_PLAYING;
 		obj->adxt[i].obj->Play();
 	}
 
-	obj->initialized = 1;
+	obj->state = AIXP_STAT_PLAYING;
 }
 
 ADXT_Object* AIXP_GetAdxt(AIXP_Object* obj, int trno)
@@ -221,7 +225,10 @@ ADXT_Object* AIXP_GetAdxt(AIXP_Object* obj, int trno)
 
 int AIXP_GetStat(AIXP_Object* obj)
 {
-	if (obj->initialized == 1 && obj->adxt[0].obj)
+#if 1
+	return obj->state;
+#else
+	if (obj->state == 1 && obj->adxt[0].obj)
 	{
 		switch (obj->adxt[0].obj->GetStatus())
 		{
@@ -235,4 +242,5 @@ int AIXP_GetStat(AIXP_Object* obj)
 		}
 	}
 	return AIXP_STAT_STOP;
+#endif
 }

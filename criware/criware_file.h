@@ -7,9 +7,9 @@
 #define AIX_SEGMENTED		1		// set to 1 for caching on demand
 
 // file helpers
-HANDLE ADX_OpenFile(const char* filename);
-void ADX_CloseFile(HANDLE fp);
-void ADX_ReadFile(HANDLE fp, void* buffer, size_t size);
+HANDLE ADXF_OpenFile(const char* filename);
+void ADXF_CloseFile(HANDLE fp);
+void ADXF_ReadFile(HANDLE fp, void* buffer, size_t size);
 
 // generic streaming interface
 class CriFileStream

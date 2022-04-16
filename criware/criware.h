@@ -5,6 +5,25 @@
 #include <vector>
 #include <string>
 
+#define	ADXF_STAT_STOP		(1)		/*	Idling								*/
+#define ADXF_STAT_READING	(2)		/*	During data read-in					*/
+#define ADXF_STAT_READEND	(3)		/*	Data read-in end					*/
+#define ADXF_STAT_ERROR		(4)		/*	Read-in error outbreak state		*/
+
+#define	ADXT_STAT_STOP		(0)		/*	Idling								*/
+#define ADXT_STAT_DECINFO	(1)		/*	Getting header information			*/
+#define ADXT_STAT_PREP		(2)		/*	During play preparation				*/
+#define ADXT_STAT_PLAYING	(3)		/*	During decode and play				*/
+#define ADXT_STAT_DECEND	(4)		/*	Decode end							*/
+#define ADXT_STAT_PLAYEND	(5)		/*	Play end							*/
+#define ADXT_STAT_ERROR		(6)		/*	Read-in error outbreak state		*/
+
+#define	AIXP_STAT_STOP		(0)		/*	Idling								*/
+#define AIXP_STAT_PREP		(1)		/*	During play preparation				*/
+#define AIXP_STAT_PLAYING	(2)		/*	During decode and play				*/
+#define AIXP_STAT_PLAYEND	(3)		/*	Play end							*/
+#define AIXP_STAT_ERROR		(4)		/*	Play end							*/
+
 //-------------------------------------------
 // big endian helpers
 class BE16
@@ -57,7 +76,7 @@ public:
 		stream(nullptr),
 		obj(nullptr),
 		volume(0),
-		initialized(0)
+		state(ADXT_STAT_STOP)
 	{}
 	~ADXT_Object()
 	{
@@ -65,9 +84,8 @@ public:
 	
 	void Release()
 	{
-		if (initialized)
+		if (state != ADXT_STAT_STOP)
 		{
-			initialized = 0;
 			if (obj)
 			{
 				obj->Stop();
@@ -75,13 +93,14 @@ public:
 				obj = nullptr;
 			}
 			if (stream) { delete stream; stream = nullptr; }
+			state = ADXT_STAT_STOP;
 		}
 	}
 
 	CriFileStream* stream;
 	SndObj* obj;
 	int volume,
-		initialized;
+		state;
 	//
 	u_long work_size;
 	void* work;
@@ -93,7 +112,7 @@ class AIXP_Object
 public:
 	AIXP_Object() : stream_no(0),
 		aix(nullptr),
-		initialized(0)
+		state(AIXP_STAT_STOP)
 	{
 	}
 	~AIXP_Object()
@@ -103,9 +122,8 @@ public:
 
 	void Release()
 	{
-		if (initialized)
+		if (state != AIXP_STAT_STOP)
 		{
-			initialized = 0;
 			for (int i = 0; i < stream_no; i++)
 			{
 				adxt[i].obj->Stop();
@@ -120,29 +138,18 @@ public:
 				delete aix;
 				aix = nullptr;
 			}
+
+			state = AIXP_STAT_STOP;
 		}
 	}
 
 	int stream_no,
-		initialized;
+		state;
 	AIX_Demuxer* aix;
 	ADXT_Object adxt[8];
 };
 
 #include "criware_afs.h"
-
-#define	ADXF_STAT_STOP		(1)		/*	Idle								*/
-#define ADXF_STAT_READING	(2)		/*	During data read-in					*/
-#define ADXF_STAT_READEND	(3)		/*	Data read-in end					*/
-#define ADXF_STAT_ERROR		(4)		/*	Read-in error outbreak state		*/
-
-#define	ADXT_STAT_STOP		(0)		/*	Idling								*/
-#define ADXT_STAT_DECINFO	(1)		/*	Getting header information			*/
-#define ADXT_STAT_PREP		(2)		/*	During play preparation				*/
-#define ADXT_STAT_PLAYING	(3)		/*	During decode and play				*/
-#define ADXT_STAT_DECEND	(4)		/*	Decode end							*/
-#define ADXT_STAT_PLAYEND	(5)		/*	Play end							*/
-#define ADXT_STAT_ERROR		(6)		/*	Read-in error outbreak state		*/
 
 // windows exclusive code
 void ADXWIN_SetupDvdFs(void* = nullptr);

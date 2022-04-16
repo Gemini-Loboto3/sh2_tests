@@ -12,7 +12,7 @@ int OpenAIX(const char* filename, AIX_Demuxer**obj)
 {
 	*obj = nullptr;
 
-	HANDLE fp = ADX_OpenFile(filename);
+	HANDLE fp = ADXF_OpenFile(filename);
 	if (fp == INVALID_HANDLE_VALUE)
 		return 0;
 
@@ -21,7 +21,7 @@ int OpenAIX(const char* filename, AIX_Demuxer**obj)
 
 	// parse header and data
 	AIX_HEADER head;
-	ADX_ReadFile(fp, &head, sizeof(head));
+	ADXF_ReadFile(fp, &head, sizeof(head));
 
 	aix->Open(fp, head.stream_count, head.data_size.dw());
 
