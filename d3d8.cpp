@@ -1,24 +1,19 @@
 #include "framework.h"
 #include "d3d8_proxy.h"
+#include <d3d9.h>
 
-HMODULE dll = nullptr;
+HMODULE dll = nullptr, proxy = nullptr;
 FARPROC fp[4];
 
-void _DebugSetMute()
-{
-}
+//void _DebugSetMute()
+//{
+//}
 
 void SetD3D8()
 {
-	dll = LoadLibraryW(L"sh2ee.dll");
-	if (!dll)
-	{
-		char path[MAX_PATH];
-		CopyMemory(path + GetSystemDirectoryA(path, MAX_PATH - 9), "\\d3d8.dll", 10);
-
-		dll = LoadLibraryA(path);
-	}
-
+	char path[MAX_PATH];
+	CopyMemory(path + GetSystemDirectoryA(path, MAX_PATH - 9), "\\d3d8.dll", 10);
+	dll = LoadLibraryA(path);
 	if (dll)
 	{
 		fp[0] = GetProcAddress(dll, "ValidatePixelShader");
@@ -27,18 +22,26 @@ void SetD3D8()
 		fp[3] = GetProcAddress(dll, "Direct3DCreate8");
 	}
 
-
+	//proxy = LoadLibraryW(L"sh2ee.dll");
+	//if (proxy)
+	//{
+	//	fp[0] = GetProcAddress(proxy, "ValidatePixelShader");
+	//	fp[1] = GetProcAddress(proxy, "ValidateVertexShader");
+	//	fp[2] = GetProcAddress(LoadLibraryA("d3d9.dll"), "DebugSetMute");
+	//	fp[3] = GetProcAddress(proxy, "Direct3DCreate8");
+	//}
 }
 
 void ClearD3D8()
 {
 	if(dll) FreeLibrary(dll);
+	if (proxy) FreeLibrary(proxy);
 }
 
 void __declspec(naked) ValidatePixelShader()  { __asm {jmp fp[0 * 4]}; }
 void __declspec(naked) ValidateVertexShader() { __asm {jmp fp[1 * 4]}; }
-void __declspec(naked) DebugSetMute()         { __asm {jmp fp[2 * 4]}; }
-#if 1
+void __declspec(naked) _DebugSetMute()         { __asm {jmp fp[2 * 4]}; }
+#ifdef NDEBUG
 void __declspec(naked) _Direct3DCreate8()     { __asm {jmp fp[3 * 4]}; }
 #else
 typedef IDirect3D8* (WINAPI *create)(UINT SDKVersion);

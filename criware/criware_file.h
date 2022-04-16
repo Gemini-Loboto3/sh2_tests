@@ -1,8 +1,15 @@
 #pragma once
 
-#define AIX_DEINTERLEAVE	1
-#define STREAM_CACHING		1
+#define STR_ADX_CACHING		0		// caching switch for ADX
+#define STR_AIX_CACHING		0		// caching switch for AIX
 #define STREAM_CACHE_SIZE	2048
+
+#define AIX_SEGMENTED		1		// set to 1 for caching on demand
+
+// file helpers
+HANDLE ADX_OpenFile(const char* filename);
+void ADX_CloseFile(HANDLE fp);
+void ADX_ReadFile(HANDLE fp, void* buffer, size_t size);
 
 // generic streaming interface
 class CriFileStream
@@ -49,10 +56,10 @@ class ADXStream : public CriFileStream
 public:
 	ADXStream() : fp(nullptr),
 		start(0)
-#if STREAM_CACHING
+#if STR_ADX_CACHING
 		, cache{0},
 		pos_cache(0),
-		old_pos(-1)
+		last_pos(-1)
 #endif
 	{}
 
@@ -70,31 +77,50 @@ public:
 
 	HANDLE fp;
 	u_long start;
-#if STREAM_CACHING
+#if STR_ADX_CACHING
 	BYTE cache[STREAM_CACHE_SIZE];
-	u_long pos_cache, old_pos;
+	u_long pos_cache, last_pos;
 #endif
 };
 
 // AIX streaming interface, a hell of caching and deinterleaving
 class AIXStream;
 
-class AIXParent
+class AIX_Demuxer
 {
 public:
-	virtual ~AIXParent()
+	AIX_Demuxer() : fp(INVALID_HANDLE_VALUE),
+		stream(nullptr),
+		stream_count(0)
+#if STR_AIX_CACHING
+		, cache{0},
+		pos_cache(0)
+#endif
+	{
+
+	}
+
+	virtual ~AIX_Demuxer()
 	{
 		Close();
 	}
 
 	void Open(HANDLE fp, u_long stream_count, u_long total_size);
 	void Close();
+	void Read(void* buffer, size_t size);
 
+#if STR_AIX_CACHING
+	void InitCache();
+#endif
 	void RequestData(u_long count);
 
 	HANDLE fp;
 	AIXStream* stream;
 	u_long stream_count;
+#if STR_AIX_CACHING
+	BYTE cache[STREAM_CACHE_SIZE];
+	u_long pos_cache;
+#endif
 };
 
 class AIXStream : public CriFileStream
@@ -125,7 +151,7 @@ public:
 	virtual void Read(void* buffer, size_t size);
 	virtual void Seek(u_long pos, u_long mode);
 
-	AIXParent* parent;
+	AIX_Demuxer* parent;
 	u_long stream_id,
 		pos,
 		cached;

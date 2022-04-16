@@ -8,32 +8,28 @@
 */
 #include "criware.h"
 
-int OpenAIX(const char* filename, AIX_Handle**obj)
+int OpenAIX(const char* filename, AIX_Demuxer**obj)
 {
 	*obj = nullptr;
 
-	HANDLE fp = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	HANDLE fp = ADX_OpenFile(filename);
 	if (fp == INVALID_HANDLE_VALUE)
 		return 0;
 
-	AIXParent* parent = new AIXParent;
-	parent->fp = fp;
-
-	AIX_Handle* aix = new AIX_Handle;
-	aix->parent = parent;
+	AIX_Demuxer* aix = new AIX_Demuxer;
+	aix->fp = fp;
 
 	// parse header and data
 	AIX_HEADER head;
-	DWORD read;
-	ReadFile(fp, &head, sizeof(head), &read, nullptr);
+	ADX_ReadFile(fp, &head, sizeof(head));
 
-	parent->Open(fp, head.stream_count, head.data_size.dw());
+	aix->Open(fp, head.stream_count, head.data_size.dw());
 
 	for (DWORD i = 0; i < head.stream_count; i++)
 	{
 		ADX_header_AIX adx_head;
 
-		auto s = &parent->stream[i];
+		auto s = &aix->stream[i];
 		s->Read(&adx_head, sizeof(adx_head));
 
 		s->block_size = adx_head.block_size;
@@ -53,18 +49,4 @@ int OpenAIX(const char* filename, AIX_Handle**obj)
 
 	*obj = aix;
 	return 1;
-}
-
-void CloseAIX(AIX* obj)
-{
-	AIX_Handle* aix = (AIX_Handle*)obj;
-
-	if (aix->parent)
-	{
-		aix->parent->Close();
-		delete aix->parent;
-		aix = nullptr;
-	}
-
-	delete obj;
 }

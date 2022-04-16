@@ -66,24 +66,4 @@ typedef struct AIXE_HEADER
 	BYTE magic[4];	// AIXE
 } AIXE_HEADER;
 
-typedef struct AIX {} AIX;
-
-class AIX_Handle
-{
-public:
-	AIX_Handle() : parent(nullptr)
-	{}
-	~AIX_Handle()
-	{
-		if (parent)
-		{
-			delete parent;
-			parent = nullptr;
-		}
-	}
-
-	AIXParent* parent;
-};
-
-int OpenAIX(const char* filename, AIX_Handle** obj);
-void CloseAIX(AIX* obj);
+int OpenAIX(const char* filename, AIX_Demuxer** obj);

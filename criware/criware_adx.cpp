@@ -16,7 +16,7 @@ int OpenADX(ADXStream* adx)
 	if (head.magic.w() != 0x8000)
 	{
 		adx->Close();
-		return 0;
+		return -1;
 	}
 
 	if (head.copyright_offset.w() <= 32)
@@ -66,11 +66,11 @@ int OpenADX(ADXStream* adx)
 	else
 	{
 		delete adx;
-		return 0;
+		return -1;
 	}
 
 	adx_set_coeff(adx);
-	return 1;
+	return S_OK;
 }
 
 int OpenADX(const char* filename, ADXStream** obj)

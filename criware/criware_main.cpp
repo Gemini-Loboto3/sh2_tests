@@ -107,14 +107,7 @@ void ADXT_StartAfs(ADXT_Object* obj, int patid, int fid)
 
 void ADXT_Stop(ADXT_Object* obj)
 {
-	if (obj->obj)
-	{
-		ds_Stop(obj->obj);
-		ds_Release(obj->obj);
-		obj->obj = nullptr;
-		obj->stream = nullptr;
-		obj->initialized = 0;
-	}
+	obj->Release();
 }
 
 void ADXT_StartFname(ADXT_Object* obj, const char* fname)
@@ -183,11 +176,7 @@ void AIXP_Destroy(AIXP_Object* obj)
 
 void AIXP_Stop(AIXP_Object* obj)
 {
-	for (int i = 0; i < obj->stream_no; i++)
-	{
-		obj->adxt[i].obj->Stop();
-		obj->adxt[i].obj->Release();
-	}
+	obj->Release();
 }
 
 // set if this should loop
@@ -199,15 +188,15 @@ void AIXP_SetLpSw(AIXP_Object* obj, int sw)
 
 void AIXP_StartFname(AIXP_Object* obj, const char* fname, void* atr)
 {
-	AIX_Handle* aix;
+	AIX_Demuxer* aix;
 
 	OpenAIX(fname, &aix);
 	obj->aix = aix;
-	obj->stream_no = aix->parent->stream_count;
+	obj->stream_no = aix->stream_count;
 
 	for (int i = 0; i < obj->stream_no; i++)
 	{
-		obj->adxt[i].stream = &aix->parent->stream[i];
+		obj->adxt[i].stream = &aix->stream[i];
 		obj->adxt[i].obj = ds_FindObj();
 		obj->adxt[i].obj->loops = true;
 		obj->adxt[i].obj->CreateBuffer(obj->adxt[i].stream);

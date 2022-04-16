@@ -34,7 +34,7 @@ public:
 
 	void Open(const char* filename)
 	{
-		fp = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		fp = ADX_OpenFile(filename);
 		part_name = filename;
 	}
 
@@ -42,7 +42,7 @@ public:
 	{
 		if (fp != INVALID_HANDLE_VALUE)
 		{
-			CloseHandle(fp);
+			ADX_CloseFile(fp);
 			fp = INVALID_HANDLE_VALUE;
 		}
 	}
@@ -62,8 +62,7 @@ int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfil
 
 	AFS_header head;
 
-	DWORD read;
-	ReadFile(afs.fp, &head, sizeof(head), &read, nullptr);
+	ADX_ReadFile(afs.fp, &head, sizeof(head));
 
 	if (head.magic != '\x00SFA' && head.magic != 'AFS\x00')
 	{
@@ -72,8 +71,7 @@ int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfil
 	}
 
 	afs.entries = std::vector<AFS_entry>(head.count);
-	ReadFile(afs.fp, afs.entries.data(), sizeof(AFS_entry) * afs.entries.size(), &read, nullptr);
-	//CloseHandle(fp);
+	ADX_ReadFile(afs.fp, afs.entries.data(), sizeof(AFS_entry) * afs.entries.size());
 
 	afs.part_name = filename;
 
@@ -93,13 +91,13 @@ static void cb(LPVOID ctx)
 
 int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 {
-	//HANDLE fp = CreateFileA(part_name.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-	//if (fp == INVALID_HANDLE_VALUE)
-	//	return 0;
-
 	ADXStream* stream = new ADXStream;
 	stream->Open(afs.fp, afs.entries[fid].pos);
-	OpenADX(stream);
+	if (FAILED(OpenADX(stream)))
+	{
+		MessageBoxA(nullptr, "Error opening ADX stream.", __FUNCTION__, MB_ICONERROR);
+		return 0;
+	}
 
 	obj->initialized = 1;
 	obj->stream = stream;

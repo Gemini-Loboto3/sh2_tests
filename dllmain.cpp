@@ -130,14 +130,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	ADXFIC_Create("data\\sound\\adx", 0, nullptr, 0);
 
-	AIX_Handle* aix;
-	OpenAIX("data\\sound\\adx\\hotel\\bgm_112.aix", &aix);
-	//CloseAIX(aix);
-
-	ADXStream* adx;
-	OpenADX("data\\sound\\adx\\apart\\bgm_014.adx", &adx);
-	CriFileStream* in0 = (CriFileStream*)adx;
-	CriFileStream* in1 = &aix->parent->stream[4];
+	AIX_Demuxer* aix;
+	OpenAIX("data\\sound\\adx\\hotel\\bgm_113.aix", &aix);
+	CriFileStream* in1 = &aix->stream[0];
 
 	ADXWIN_SetupSound(pDS);
 	ADXM_SetupThrd();

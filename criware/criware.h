@@ -61,14 +61,21 @@ public:
 	{}
 	~ADXT_Object()
 	{
-		initialized = 0;
-		if (obj)
+	}
+	
+	void Release()
+	{
+		if (initialized)
 		{
-			obj->Stop();
-			obj->Release();
-			obj = nullptr;
+			initialized = 0;
+			if (obj)
+			{
+				obj->Stop();
+				obj->Release();
+				obj = nullptr;
+			}
+			if (stream) { delete stream; stream = nullptr; }
 		}
-		if (stream) { delete stream; stream = nullptr; }
 	}
 
 	CriFileStream* stream;
@@ -91,25 +98,34 @@ public:
 	}
 	~AIXP_Object()
 	{
-		initialized = 0;
-		for (int i = 0; i < stream_no; i++)
-		{
-			adxt[i].obj->Stop();
-			adxt[i].obj->Release();
-			adxt[i].obj = nullptr;
-		}
-		memset(adxt, 0, sizeof(adxt));
+		Release();
+	}
 
-		if (aix)
+	void Release()
+	{
+		if (initialized)
 		{
-			delete aix;
-			aix = nullptr;
+			initialized = 0;
+			for (int i = 0; i < stream_no; i++)
+			{
+				adxt[i].obj->Stop();
+				adxt[i].obj->Release();
+				adxt[i].obj = nullptr;
+			}
+			stream_no = 0;
+			memset(adxt, 0, sizeof(adxt));
+
+			if (aix)
+			{
+				delete aix;
+				aix = nullptr;
+			}
 		}
 	}
 
 	int stream_no,
 		initialized;
-	AIX_Handle* aix;
+	AIX_Demuxer* aix;
 	ADXT_Object adxt[8];
 };
 

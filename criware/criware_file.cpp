@@ -3,24 +3,48 @@
 * ===============================================================
 * File streaming interfaces
 * ---------------------------------------------------------------
-* Classes to manage ADX and AIX streaming to a sound object.
-* 
-* TODO: The AIX module could need some rewriting, as the code
-* isn't exactly the best and most efficient.
+* Classes to manage ADX and AIX streaming to a sound object, also
+* common Windows file handle operations.
 * ===============================================================
 */
 #include "criware.h"
 
 // ------------------------------------------------
+// Helpers for debloating file code
+// ------------------------------------------------
+HANDLE ADX_OpenFile(const char* filename)
+{
+	return CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+}
+
+void ADX_CloseFile(HANDLE fp)
+{
+	CloseHandle(fp);
+}
+
+void ADX_ReadFile(HANDLE fp, void* buffer, size_t size)
+{
+	DWORD read;
+	ReadFile(fp, buffer, size, &read, nullptr);
+#if _DEBUG
+	if (read != size)
+		OutputDebugStringA("Warning: read data is not the same as requested.\n");
+#endif
+}
+
+// ------------------------------------------------
 // ADX stream code, normal file wrapping
+// ------------------------------------------------
 int ADXStream::Open(const char* filename)
 {
-	fp = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	fp = ADX_OpenFile(filename);
 	if (fp == INVALID_HANDLE_VALUE)
 		return S_FALSE;
 
 	start = 0;
+#if STR_ADX_CACHING
 	Seek(0, SEEK_SET);
+#endif
 
 	return S_OK;
 }
@@ -29,9 +53,11 @@ int ADXStream::Open(HANDLE _fp, u_long pos)
 {
 	fp = _fp;
 	start = pos;
-#if STREAM_CACHING
-	Seek(0, SEEK_SET);
+#if STR_ADX_CACHING
+	pos_cache = 0;
+	last_pos = -1;
 #endif
+	Seek(0, SEEK_SET);
 
 	return S_OK;
 }
@@ -44,37 +70,36 @@ void ADXStream::Close()
 
 void ADXStream::Read(void* buffer, size_t size)
 {
-	DWORD read;
-#if STREAM_CACHING
-	if (size + pos_cache <= STREAM_CACHE_SIZE)
+#if STR_ADX_CACHING
+	BYTE* dst = (BYTE*)buffer;
+	if (size + pos_cache > STREAM_CACHE_SIZE)
 	{
-		memcpy(buffer, &cache[pos_cache], size);
-		pos_cache += size;
+		size_t remainder = STREAM_CACHE_SIZE - pos_cache;
+		memcpy(dst, &cache[pos_cache], remainder);
+		dst += remainder;
+		size -= remainder;
+		ADX_ReadFile(fp, cache, STREAM_CACHE_SIZE);
+		pos_cache = 0;
+		last_pos++;
 	}
-	else
-	{
-		BYTE* b = (BYTE*)buffer;
-		size_t nsize = (size + pos_cache) % STREAM_CACHE_SIZE;
-		memcpy(b, cache, nsize);
-		ReadFile(fp, cache, STREAM_CACHE_SIZE, &read, nullptr);
-		pos_cache = size - nsize;
-		memcpy(&b[nsize], cache, pos_cache);
-	}
+
+	memcpy(dst, &cache[pos_cache], size);
+	pos_cache += size;
 #else
-	ReadFile(fp, buffer, size, &read, nullptr);
+	ADX_ReadFile(fp, buffer, size);
 #endif
 }
 
 void ADXStream::Seek(u_long pos, u_long mode)
 {
-#if STREAM_CACHING
+#if STR_ADX_CACHING
 	u_long npos = (pos + start) / STREAM_CACHE_SIZE;
-	if (npos != old_pos)
+	if (npos != last_pos)
 	{
 		DWORD read;
 		SetFilePointer(fp, npos * STREAM_CACHE_SIZE, nullptr, mode);
-		ReadFile(fp, cache, STREAM_CACHE_SIZE, &read, nullptr);
-		old_pos = npos;
+		ADX_ReadFile(fp, cache, STREAM_CACHE_SIZE, &read, nullptr);
+		last_pos = npos;
 	}
 	pos_cache = (pos + start) % STREAM_CACHE_SIZE;
 #else
@@ -83,11 +108,12 @@ void ADXStream::Seek(u_long pos, u_long mode)
 }
 
 // ------------------------------------------------
-// AIX stream code, a lot of shit going on here
-void AIXParent::Open(HANDLE fp, u_long stream_count, u_long total_size)
+// AIX demux & stream code
+// ------------------------------------------------
+void AIX_Demuxer::Open(HANDLE _fp, u_long _stream_count, u_long total_size)
 {
-	this->fp = fp;
-	this->stream_count = stream_count;
+	fp = _fp;
+	stream_count = _stream_count;
 
 	stream = new AIXStream[stream_count];
 	for (u_long i = 0; i < stream_count; i++)
@@ -97,8 +123,13 @@ void AIXParent::Open(HANDLE fp, u_long stream_count, u_long total_size)
 		stream[i].MakeBuffer(total_size / stream_count);
 	}
 
-#if AIX_DEINTERLEAVE
-	RequestData(2);		// request the necessary amount of data for header and a chunk of ADX
+#if STR_AIX_CACHING
+	InitCache();
+#endif
+
+#if AIX_SEGMENTED
+	// request the necessary amount of data for header and a chunk of ADX
+	RequestData(2);
 #else
 	AIX_CHUNK chunk;
 	AIXP_HEADER aixp;
@@ -107,15 +138,14 @@ void AIXParent::Open(HANDLE fp, u_long stream_count, u_long total_size)
 
 	for (int i = 0, loop = 1; loop;)
 	{
-		DWORD read;
-		ReadFile(fp, &chunk, sizeof(chunk), &read, nullptr);
+		Read(&chunk, sizeof(chunk));
 
 		switch (chunk.type)
 		{
 		case 'P':
-			ReadFile(fp, &aixp, sizeof(aixp), &read, nullptr);
+			Read(&aixp, sizeof(aixp));
 			s = &stream[aixp.stream_id];
-			ReadFile(fp, &s->data[s->cached], chunk.next.dw() - sizeof(aixp), &read, nullptr);
+			Read(&s->data[s->cached], chunk.next.dw() - sizeof(aixp));
 			s->cached += chunk.next.dw() - sizeof(aixp);
 			break;
 		case 'E':
@@ -125,50 +155,97 @@ void AIXParent::Open(HANDLE fp, u_long stream_count, u_long total_size)
 #endif
 }
 
-void AIXParent::Close()
+void AIX_Demuxer::Close()
 {
 	if (stream_count)
 		delete[] stream;
+	stream_count = 0;
+	stream = nullptr;
 
 	CloseHandle(fp);
+	fp = INVALID_HANDLE_VALUE;
 }
 
-void AIXParent::RequestData(u_long count)
+#if STR_AIX_CACHING
+void AIX_Demuxer::InitCache()
 {
-#if AIX_DEINTERLEAVE
+	pos_cache = 0;
+	ADX_ReadFile(fp, cache, STREAM_CACHE_SIZE);
+}
+#endif
+
+void AIX_Demuxer::Read(void* buffer, size_t size)
+{
+	BYTE* dst = (BYTE*)buffer;
+#if STR_AIX_CACHING
+	// cache overflow
+	if (size + pos_cache > STREAM_CACHE_SIZE)
+	{
+		size_t remainder = STREAM_CACHE_SIZE - pos_cache;	// how much we can still read
+		memcpy(dst, &cache[pos_cache], remainder);			// send whatever is left in the buffer
+		dst += remainder;									// skip what is stored
+		size -= remainder;
+		// check if next read fits in the cache
+		if (size > STREAM_CACHE_SIZE)
+		{
+			size_t blocks = size / STREAM_CACHE_SIZE;
+			for (u_long i = 0; i < blocks; i++, dst += STREAM_CACHE_SIZE, size -= STREAM_CACHE_SIZE)
+				ADX_ReadFile(fp, dst, STREAM_CACHE_SIZE);
+		}
+		// refill the cache
+		pos_cache = 0;
+		ADX_ReadFile(fp, cache, STREAM_CACHE_SIZE);		// cache more
+	}
+
+	if (size)
+	{
+		memcpy(dst, &cache[pos_cache], size);
+		pos_cache += size;
+	}
+#else
+	ADX_ReadFile(fp, buffer, size);
+#endif
+}
+
+void AIX_Demuxer::RequestData(u_long count)
+{
+#if AIX_SEGMENTED
 	AIX_CHUNK chunk;
 	AIXP_HEADER aixp;
 	AIXStream* s;
 
-	for (int i = 0; i < stream_count * count; i++)
+	for (u_long i = 0; i < stream_count * count; i++)
 	{
-		DWORD read;
-		ReadFile(fp, &chunk, sizeof(chunk), &read, nullptr);
+		Read(&chunk, sizeof(chunk));
 
 		switch (chunk.type)
 		{
 		case 'P':
-			ReadFile(fp, &aixp, sizeof(aixp), &read, nullptr);
+			Read(&aixp, sizeof(aixp));
 			s = &stream[aixp.stream_id];
-			ReadFile(fp, &s->data[s->cached], chunk.next.dw() - sizeof(aixp), &read, nullptr);
+			Read(&s->data[s->cached], chunk.next.dw() - sizeof(aixp));
 			s->cached += chunk.next.dw() - sizeof(aixp);
 			break;
-		case 'E':
+		case 'E':	// end parsing
 			return;
 		}
 	}
 #endif
 }
 
+// ------------------------------------------------
+// AIX stream, behaves the same as ADX streams but
+// from memory
+// ------------------------------------------------
 void AIXStream::Read(void* buffer, size_t size)
 {
-#if !AIX_DEINTERLEAVE
+#if !AIX_SEGMENTED
 	memcpy(buffer, &data[pos], size);
 	pos += size;
 #else
 	// we're reading ahead of what's cached from AIX
 	if (pos + size > cached)
-		parent->RequestData(2);	// 2 whole reads should be safe
+		parent->RequestData(1);	// 1 whole read should be safe
 	// still inside cache, just copy over
 	memcpy(buffer, &data[pos], size);
 	pos += size;
@@ -177,11 +254,11 @@ void AIXStream::Read(void* buffer, size_t size)
 
 void AIXStream::Seek(u_long _pos, u_long mode)
 {
-#if !AIX_DEINTERLEAVE
+#if !AIX_SEGMENTED
 	pos = _pos;
 #else
-	if(_pos > cached)
-		parent->RequestData(2);	// 2 whole reads should be safe
+	while(_pos > cached)
+		parent->RequestData(1);	// request until we're good
 	pos = _pos;
 #endif
 }
