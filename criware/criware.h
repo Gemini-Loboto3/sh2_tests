@@ -5,9 +5,6 @@
 #include <vector>
 #include <string>
 
-void ADX_lock();
-void ADX_unlock();
-
 //-------------------------------------------
 // big endian helpers
 class BE16
@@ -118,12 +115,12 @@ public:
 
 #include "criware_afs.h"
 
-#define	ADXF_STAT_STOP			(1)			/*	During standstill			*/
-#define ADXF_STAT_READING		(2)			/*	During data read-in			*/
-#define ADXF_STAT_READEND		(3)			/*	Data read-in end			*/
-#define ADXF_STAT_ERROR			(4)			/*	Read-in error outbreak state*/
+#define	ADXF_STAT_STOP		(1)		/*	Idle								*/
+#define ADXF_STAT_READING	(2)		/*	During data read-in					*/
+#define ADXF_STAT_READEND	(3)		/*	Data read-in end					*/
+#define ADXF_STAT_ERROR		(4)		/*	Read-in error outbreak state		*/
 
-#define	ADXT_STAT_STOP		(0)		/*	During standstill					*/
+#define	ADXT_STAT_STOP		(0)		/*	Idling								*/
 #define ADXT_STAT_DECINFO	(1)		/*	Getting header information			*/
 #define ADXT_STAT_PREP		(2)		/*	During play preparation				*/
 #define ADXT_STAT_PLAYING	(3)		/*	During decode and play				*/
@@ -169,5 +166,5 @@ AIXP_Object* AIXP_Create(int maxntr, int maxnch, void* work, int worksize);
 void AIXP_SetLpSw(AIXP_Object *obj, int sw);
 void AIXP_StartFname(AIXP_Object *obj, const char *fname, void *atr);
 ADXT_Object* AIXP_GetAdxt(AIXP_Object *obj, int trno);
-int AIXP_GetStat(AIXP_Object *obj);
+int  AIXP_GetStat(AIXP_Object *obj);
 

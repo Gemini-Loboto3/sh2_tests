@@ -118,18 +118,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	if(FAILED(pDS->SetCooperativeLevel(hWnd, DSSCL_NORMAL)))
 		MessageBoxA(hWnd, "failed", "ERRA", MB_OK);
 
-	LPDIRECTSOUNDBUFFER pDB, pDB_main;
+	LPDIRECTSOUNDBUFFER pDB_main;
 	DSBUFFERDESC desc = {0};
-	WAVEFORMATEX fmt;
-	HRESULT hr;
-
-	fmt.cbSize = sizeof(fmt);
-	fmt.nSamplesPerSec = 44100;
-	fmt.nBlockAlign = 4;
-	fmt.nChannels = 2;
-	fmt.wBitsPerSample = 16;
-	fmt.wFormatTag = WAVE_FORMAT_PCM;
-	fmt.nAvgBytesPerSec = 44100 * 4;
 
 	// primary buffer
 	desc.dwSize = sizeof(desc);
@@ -140,9 +130,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	ADXFIC_Create("data\\sound\\adx", 0, nullptr, 0);
 
-	short *ptr1, *ptr2;
-	DWORD bytes1, bytes2;
-
 	AIX_Handle* aix;
 	OpenAIX("data\\sound\\adx\\hotel\\bgm_112.aix", &aix);
 	//CloseAIX(aix);
@@ -152,39 +139,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	CriFileStream* in0 = (CriFileStream*)adx;
 	CriFileStream* in1 = &aix->parent->stream[4];
 
-#if 0
-	// adx playback buffer
-	desc.lpwfxFormat = &fmt;
-	desc.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY;
-	desc.dwBufferBytes = BUFFER_SIZE;
-	fmt.nSamplesPerSec = in->sample_rate;
-	fmt.nAvgBytesPerSec = in->sample_rate * 4;
-	hr = pDS->CreateSoundBuffer(&desc, &pDB, nullptr);
-
-	// perform first filling
-	pDB->Lock(0, BUFFER_SIZE, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-	decode_adx_standard(in, ptr1, bytes1 / fmt.nBlockAlign, 1);
-	pDB->Unlock(ptr1, bytes1, ptr2, bytes2);
-	
-	Thread_data ctx;
-	ctx.pDB = pDB;
-	ctx.adx = in;
-	ctx.nBlockAlign = fmt.nBlockAlign;
-	ctx.looping = 1;
-	HANDLE hThread = CreateThread(nullptr, 0, test_thread, (LPVOID)&ctx, CREATE_SUSPENDED, nullptr);
-	SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
-
-	int flip = 1;
-	// kick playback
-	pDB->SetVolume(-1000);
-	pDB->Play(0, 0, DSBPLAY_LOOPING);
-	ResumeThread(hThread);
-#else
 	ADXWIN_SetupSound(pDS);
 	ADXM_SetupThrd();
 
 	auto obj0 = ds_FindObj();
-	ds_CreateBuffer(obj0, adx);
+	ds_CreateBuffer(obj0, in1);
 
 	//adxds_SetVolume(obj0, -100);
 	//adxds_SetVolume(obj1, -300);
@@ -194,7 +153,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	//adxds_Play(obj2);
 	//adxds_Play(obj3);
 	//adxds_Play(obj4);
-#endif
 
 	ShowWindow(hWnd, SW_SHOW);
 
@@ -206,7 +164,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		{
 			if (msg.message == WM_QUIT)
 			{
-				//ctx.looping = false;
 				loop = false;
 			}
 			TranslateMessage(&msg);
@@ -227,9 +184,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	//pDB->Stop();
 	//CloseADX(adx);
 
-	//pDB->Release();
-	//pDB_main->Release();
+	pDB_main->Release();
 	pDS->Release();
 }
 #endif
-

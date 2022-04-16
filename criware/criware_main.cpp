@@ -9,19 +9,6 @@
 */
 #include "criware.h"
 
-//
-CRITICAL_SECTION ADX_crit;
-void ADX_lock()
-{
-	EnterCriticalSection(&ADX_crit);
-}
-
-void ADX_unlock()
-{
-	LeaveCriticalSection(&ADX_crit);
-}
-
-
 ADXFIC_Object* ADXFIC_Create(const char* dname, int mode, char *work, int wksize)
 {
 	return adx_ficCreate(dname);
@@ -55,15 +42,15 @@ void ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8)
 // in our case it just creates one thread running in parallel with the game
 void ADXM_SetupThrd(int* priority /* ignored */)
 {
-	InitializeCriticalSection(&ADX_crit);
+	ADX_lock_init();
 	server_create();
 }
 
 // destroys the ADX threads
 void ADXM_ShutdownThrd()
 {
-	DeleteCriticalSection(&ADX_crit);
 	server_destroy();
+	ADX_lock_close();
 }
 
 int ADXF_LoadPartitionNw(int ptid, const char *filename, void *ptinfo, void *nfile)

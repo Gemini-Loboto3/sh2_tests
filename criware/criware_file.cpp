@@ -88,47 +88,22 @@ void AIXParent::Open(HANDLE fp, u_long stream_count, u_long total_size)
 {
 	this->fp = fp;
 	this->stream_count = stream_count;
-	chunk_pos = new u_long[stream_count];
 
 	stream = new AIXStream[stream_count];
 	for (u_long i = 0; i < stream_count; i++)
 	{
 		stream[i].parent = this;
 		stream[i].stream_id = i;
+		stream[i].MakeBuffer(total_size / stream_count);
 	}
 
-#if INTERLEAVE_FILE
-	// generate a list of where chunks are stored for each channel 0
-	AIX_CHUNK chunk;
-	AIXP_HEADER aixp;
-	for (int i = 0, loop = 1; loop;)
-	{
-		DWORD read;
-		ReadFile(fp, &chunk, sizeof(chunk), &read, nullptr);
-
-		switch (chunk.type)
-		{
-		case 'P':
-			ReadFile(fp, &aixp, sizeof(aixp), &read, nullptr);
-			if (aixp.stream_id == 0)
-				chunk_pos[i++] = SetFilePointer(fp, 0, nullptr, FILE_CURRENT) - sizeof(chunk) - sizeof(aixp);
-			SetFilePointer(fp, chunk.next.dw() - sizeof(aixp), nullptr, FILE_CURRENT);
-			break;
-		case 'E':
-			loop = 0;
-		}
-	}
+#if AIX_DEINTERLEAVE
+	RequestData(2);		// request the necessary amount of data for header and a chunk of ADX
 #else
 	AIX_CHUNK chunk;
 	AIXP_HEADER aixp;
 
-	data = new BYTE*[stream_count];
-	pos = new BYTE*[stream_count];
-	for (u_long i = 0; i < stream_count; i++)
-	{
-		data[i] = new BYTE[total_size / stream_count];	// allocate a buffer large enough to store deinterleaved data
-		pos[i] = data[i];
-	}
+	AIXStream* s;
 
 	for (int i = 0, loop = 1; loop;)
 	{
@@ -139,16 +114,14 @@ void AIXParent::Open(HANDLE fp, u_long stream_count, u_long total_size)
 		{
 		case 'P':
 			ReadFile(fp, &aixp, sizeof(aixp), &read, nullptr);
-			ReadFile(fp, pos[aixp.stream_id], chunk.next.dw() - sizeof(aixp), &read, nullptr);
-			pos[aixp.stream_id] += chunk.next.dw() - sizeof(aixp);
+			s = &stream[aixp.stream_id];
+			ReadFile(fp, &s->data[s->cached], chunk.next.dw() - sizeof(aixp), &read, nullptr);
+			s->cached += chunk.next.dw() - sizeof(aixp);
 			break;
 		case 'E':
 			loop = 0;
 		}
 	}
-
-	for (u_long i = 0; i < stream_count; i++)
-		pos[i] = data[i];
 #endif
 }
 
@@ -157,41 +130,58 @@ void AIXParent::Close()
 	if (stream_count)
 		delete[] stream;
 
-#if !INTERLEAVE_FILE
-	delete[] pos;
-	for (u_long i = 0; i < stream_count; i++)
-		delete[] data[i];
-	delete[] data;
-#endif
-
 	CloseHandle(fp);
 }
 
-void AIXParent::RequestData(u_long stream_id, void* data, u_long size)
+void AIXParent::RequestData(u_long count)
 {
-#if !INTERLEAVE_FILE
-	memcpy(data, pos[stream_id], size);
-	pos[stream_id] += size;
-#endif
-}
+#if AIX_DEINTERLEAVE
+	AIX_CHUNK chunk;
+	AIXP_HEADER aixp;
+	AIXStream* s;
 
-void AIXParent::RequestSeek(u_long stream_id, u_long pos)
-{
-#if !INTERLEAVE_FILE
-	this->pos[stream_id] = &data[stream_id][pos];
+	for (int i = 0; i < stream_count * count; i++)
+	{
+		DWORD read;
+		ReadFile(fp, &chunk, sizeof(chunk), &read, nullptr);
+
+		switch (chunk.type)
+		{
+		case 'P':
+			ReadFile(fp, &aixp, sizeof(aixp), &read, nullptr);
+			s = &stream[aixp.stream_id];
+			ReadFile(fp, &s->data[s->cached], chunk.next.dw() - sizeof(aixp), &read, nullptr);
+			s->cached += chunk.next.dw() - sizeof(aixp);
+			break;
+		case 'E':
+			return;
+		}
+	}
 #endif
 }
 
 void AIXStream::Read(void* buffer, size_t size)
 {
-#if !INTERLEAVE_FILE
-	parent->RequestData(stream_id, buffer, size);
+#if !AIX_DEINTERLEAVE
+	memcpy(buffer, &data[pos], size);
+	pos += size;
+#else
+	// we're reading ahead of what's cached from AIX
+	if (pos + size > cached)
+		parent->RequestData(2);	// 2 whole reads should be safe
+	// still inside cache, just copy over
+	memcpy(buffer, &data[pos], size);
+	pos += size;
 #endif
 }
 
-void AIXStream::Seek(u_long pos, u_long mode)
+void AIXStream::Seek(u_long _pos, u_long mode)
 {
-#if !INTERLEAVE_FILE
-	parent->RequestSeek(stream_id, pos);
+#if !AIX_DEINTERLEAVE
+	pos = _pos;
+#else
+	if(_pos > cached)
+		parent->RequestData(2);	// 2 whole reads should be safe
+	pos = _pos;
 #endif
 }

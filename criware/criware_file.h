@@ -1,6 +1,6 @@
 #pragma once
 
-#define INTERLEAVE_FILE		0
+#define AIX_DEINTERLEAVE	1
 #define STREAM_CACHING		1
 #define STREAM_CACHE_SIZE	2048
 
@@ -90,40 +90,44 @@ public:
 	void Open(HANDLE fp, u_long stream_count, u_long total_size);
 	void Close();
 
-	void RequestData(u_long stream_id, void* data, u_long size);
-	void RequestSeek(u_long stream_id, u_long pos);
+	void RequestData(u_long count);
 
 	HANDLE fp;
 	AIXStream* stream;
 	u_long stream_count;
-	u_long *chunk_pos;
-#if !INTERLEAVE_FILE
-	BYTE** data;
-	BYTE** pos;
-#endif
 };
-
-#define AIX_BUFFER_SIZE	2048
 
 class AIXStream : public CriFileStream
 {
 public:
 	AIXStream() : parent(nullptr),
-		consumed(0),
-		available(0),
-		//buffer{0},
-		stream_id(0)
+		stream_id(0),
+		pos(0),
+		cached(0),
+		data(nullptr)
 	{
 	}
 	virtual ~AIXStream()
-	{}
+	{
+		pos = 0;
+		if (data)
+		{
+			delete[] data;
+			data = nullptr;
+		}
+	}
+
+	void MakeBuffer(u_long size)
+	{
+		data = new BYTE[size];
+	}
 
 	virtual void Read(void* buffer, size_t size);
 	virtual void Seek(u_long pos, u_long mode);
 
 	AIXParent* parent;
-	u_long consumed,
-		available,
-		stream_id;
-	//BYTE buffer[AIX_BUFFER_SIZE];
+	u_long stream_id,
+		pos,
+		cached;
+	BYTE* data;
 };
