@@ -96,9 +96,8 @@ void ADXStream::Seek(u_long pos, u_long mode)
 	u_long npos = (pos + start) / STREAM_CACHE_SIZE;
 	if (npos != last_pos)
 	{
-		DWORD read;
 		SetFilePointer(fp, npos * STREAM_CACHE_SIZE, nullptr, mode);
-		ADXF_ReadFile(fp, cache, STREAM_CACHE_SIZE, &read, nullptr);
+		ADXF_ReadFile(fp, cache, STREAM_CACHE_SIZE);
 		last_pos = npos;
 	}
 	pos_cache = (pos + start) % STREAM_CACHE_SIZE;

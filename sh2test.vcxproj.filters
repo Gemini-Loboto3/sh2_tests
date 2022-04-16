@@ -13,6 +13,9 @@
     <Filter Include="criware">
       <UniqueIdentifier>{88df9eef-1728-457a-a44c-22b78f00380d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="nvwa">
+      <UniqueIdentifier>{177da1cb-1b09-406c-a4d8-a2018a433cd1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
@@ -67,6 +70,21 @@
     </ClInclude>
     <ClInclude Include="criware\criware_afs.h">
       <Filter>criware</Filter>
+    </ClInclude>
+    <ClInclude Include="nvwa\_nvwa.h">
+      <Filter>nvwa</Filter>
+    </ClInclude>
+    <ClInclude Include="nvwa\c++11.h">
+      <Filter>nvwa</Filter>
+    </ClInclude>
+    <ClInclude Include="nvwa\debug_new.h">
+      <Filter>nvwa</Filter>
+    </ClInclude>
+    <ClInclude Include="nvwa\fast_mutex.h">
+      <Filter>nvwa</Filter>
+    </ClInclude>
+    <ClInclude Include="nvwa\static_assert.h">
+      <Filter>nvwa</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -130,6 +148,9 @@
     </ClCompile>
     <ClCompile Include="criware\criware_adxfic.cpp">
       <Filter>criware</Filter>
+    </ClCompile>
+    <ClCompile Include="nvwa\debug_new.cpp">
+      <Filter>nvwa</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

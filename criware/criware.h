@@ -1,5 +1,7 @@
 #pragma once
 
+#include "..\nvwa\debug_new.h"
+
 #include <windows.h>
 #include <dsound.h>
 #include <vector>

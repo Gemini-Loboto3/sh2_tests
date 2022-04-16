@@ -193,6 +193,11 @@
     <ClInclude Include="dxrinput\wrappers\xinput.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="inject.h" />
+    <ClInclude Include="nvwa\c++11.h" />
+    <ClInclude Include="nvwa\debug_new.h" />
+    <ClInclude Include="nvwa\fast_mutex.h" />
+    <ClInclude Include="nvwa\static_assert.h" />
+    <ClInclude Include="nvwa\_nvwa.h" />
     <ClInclude Include="sh2test.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="xaudio\audio.h" />
@@ -220,6 +225,7 @@
     <ClCompile Include="dxrinput\dinput8_proxy.cpp" />
     <ClCompile Include="dxrinput\wrappers\rawinput.cpp" />
     <ClCompile Include="dxrinput\wrappers\xinput.cpp" />
+    <ClCompile Include="nvwa\debug_new.cpp" />
     <ClCompile Include="sh2test.cpp" />
     <ClCompile Include="timer.cpp" />
     <ClCompile Include="util.cpp" />

@@ -187,25 +187,33 @@ void AIXP_Stop(AIXP_Object* obj)
 void AIXP_SetLpSw(AIXP_Object* obj, int sw)
 {
 	for(int i = 0; i < obj->stream_no; i++)
-		obj->adxt[0].obj->loops = sw;
+		obj->adxt[i].obj->loops = sw ? 1 : 0;
 }
 
 void AIXP_StartFname(AIXP_Object* obj, const char* fname, void* atr)
 {
 	AIX_Demuxer* aix;
 
-	OpenAIX(fname, &aix);
+	obj->state = AIXP_STAT_PREP;
+	if (OpenAIX(fname, &aix) == 0)
+	{
+		obj->state = AIXP_STAT_ERROR;
+		return;
+	}
 	obj->aix = aix;
 	obj->stream_no = aix->stream_count;
 
+	// create the necessary buffers
 	for (int i = 0; i < obj->stream_no; i++)
 	{
+		obj->adxt[i].state = ADXT_STAT_PREP;
 		obj->adxt[i].stream = &aix->stream[i];
 		obj->adxt[i].obj = ds_FindObj();
 		obj->adxt[i].obj->loops = true;
 		obj->adxt[i].obj->CreateBuffer(obj->adxt[i].stream);
 	}
 
+	// kick all playback for all streams at once
 	for (int i = 0; i < obj->stream_no; i++)
 	{
 		obj->adxt[i].state = ADXT_STAT_PLAYING;
