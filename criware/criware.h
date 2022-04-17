@@ -97,15 +97,13 @@ public:
 				ADX_lock();
 				obj->Stop();
 				obj->Release();
-				// unlock thread and trash the reference
+				// unlock thread and trash the dsound reference
 				ADX_unlock();
 				obj = nullptr;
 			}
 			if (stream && !is_aix)
-			{
 				delete stream;
-				stream = nullptr;
-			}
+			stream = nullptr;
 			state = ADXT_STAT_STOP;
 		}
 	}

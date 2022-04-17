@@ -102,11 +102,9 @@ void ADXT_StartAfs(ADXT_Object* obj, int patid, int fid)
 	if (obj == nullptr)
 		return;
 	
-	if (obj->state == 0)
-	{
+	if (obj->state != ADXT_STAT_STOP)
 		ADXT_Stop(obj);
-		asf_StartAfs(obj, patid, fid);
-	}
+	asf_StartAfs(obj, patid, fid);
 }
 
 void ADXT_Stop(ADXT_Object* obj)
@@ -116,6 +114,9 @@ void ADXT_Stop(ADXT_Object* obj)
 
 void ADXT_StartFname(ADXT_Object* obj, const char* fname)
 {
+	if (obj->state != ADXT_STAT_STOP)
+		ADXT_Stop(obj);
+
 	ADXStream *stream;
 	OpenADX(fname, &stream);
 

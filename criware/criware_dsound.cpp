@@ -43,7 +43,7 @@ void ds_CreateBuffer(SndObj *obj, CriFileStream* stream)
 
 	obj->fmt.cbSize = sizeof(WAVEFORMATEX);
 	obj->fmt.nSamplesPerSec = stream->sample_rate;
-	obj->fmt.nBlockAlign = 4;
+	obj->fmt.nBlockAlign = 2 * stream->channel_count;
 	obj->fmt.nChannels = (WORD)stream->channel_count;
 	obj->fmt.wBitsPerSample = 16;
 	obj->fmt.wFormatTag = WAVE_FORMAT_PCM;

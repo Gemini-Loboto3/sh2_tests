@@ -81,9 +81,8 @@ int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfil
 static void cb(LPVOID ctx)
 {
 	ADXT_Object* obj = (ADXT_Object*)ctx;
-	//ADXT_Stop(obj);
-	obj->state = ADXT_STAT_PLAYEND;
-	obj->obj->stopped = 1;
+	ADXT_Stop(obj);
+	//obj->state = ADXT_STAT_PLAYEND;
 }
 
 int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
@@ -99,7 +98,7 @@ int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 	if (magic == 'RIFF' || magic == 'FFIR')
 	{
 		auto wav = new WAVStream;
-		// we need to make a new handle for wav or this will crash badly
+		// we need to make a new handle for wav to prevent crashes
 		HANDLE fp = ADXF_OpenFile(afs.part_name.c_str());
 		ADXF_Seek(fp, afs.entries[fid].pos, FILE_BEGIN);
 		if (wav->Open(fp, afs.entries[fid].pos) == S_FALSE)

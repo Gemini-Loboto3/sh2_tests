@@ -11,7 +11,7 @@ A reimplementation of Criware's middleware library for audio streaming of ADX co
 * Limited AFS support with one partition and numeric IDs;
 * Implements the original DirectSound8 interface, but can be easily adapted to using any other sound API like XAudio2 or OpenAL.
 
-## dxrinpit [work in progress]
+## dxrinput [work in progress]
 A module to implement native DualShock 4 and DualSense support via Raw Input masking itself as a DInput device.
 ## xaudio [incomplete]
 
