@@ -4,7 +4,7 @@ This is a stand alone collection of hacks for testing before getting integrated 
 ## criware
 A reimplementation of Criware's middleware library for audio streaming of ADX compressed data, with some support for AFS. This module implements the following features:
 * Replicates all public ADX functions found in SH2;
-* Reworked architecture to to use only one thread to manage data transfers and to avoid desyncing issues;
+* Reworked architecture to use only one thread to manage data transfers and to avoid desyncing issues;
 * File I/O reworked for more practical modern data access (i.e. disregards DVD limitations in favor of better flow);
 * ADX parsing and real time decoding;
 * AIX real time demuxing and abstraction to ADX objects;

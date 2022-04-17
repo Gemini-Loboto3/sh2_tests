@@ -7,24 +7,24 @@
 #include <vector>
 #include <string>
 
-#define	ADXF_STAT_STOP		(1)		/*	Idling								*/
-#define ADXF_STAT_READING	(2)		/*	During data read-in					*/
-#define ADXF_STAT_READEND	(3)		/*	Data read-in end					*/
-#define ADXF_STAT_ERROR		(4)		/*	Read-in error outbreak state		*/
+#define	ADXF_STAT_STOP		(1)		// Idling
+#define ADXF_STAT_READING	(2)		// During data read-in
+#define ADXF_STAT_READEND	(3)		// Data read-in end
+#define ADXF_STAT_ERROR		(4)		// Read-in error outbreak state
 
-#define	ADXT_STAT_STOP		(0)		/*	Idling								*/
-#define ADXT_STAT_DECINFO	(1)		/*	Getting header information			*/
-#define ADXT_STAT_PREP		(2)		/*	During play preparation				*/
-#define ADXT_STAT_PLAYING	(3)		/*	During decode and play				*/
-#define ADXT_STAT_DECEND	(4)		/*	Decode end							*/
-#define ADXT_STAT_PLAYEND	(5)		/*	Play end							*/
-#define ADXT_STAT_ERROR		(6)		/*	Read-in error outbreak state		*/
+#define	ADXT_STAT_STOP		(0)		// Idling
+#define ADXT_STAT_DECINFO	(1)		// Getting header information
+#define ADXT_STAT_PREP		(2)		// During playback preparation
+#define ADXT_STAT_PLAYING	(3)		// During decode and playback
+#define ADXT_STAT_DECEND	(4)		// Decode end
+#define ADXT_STAT_PLAYEND	(5)		// Play end
+#define ADXT_STAT_ERROR		(6)		// Read-in error outbreak state
 
-#define	AIXP_STAT_STOP		(0)		/*	Idling								*/
-#define AIXP_STAT_PREP		(1)		/*	During play preparation				*/
-#define AIXP_STAT_PLAYING	(2)		/*	During decode and play				*/
-#define AIXP_STAT_PLAYEND	(3)		/*	Play end							*/
-#define AIXP_STAT_ERROR		(4)		/*	Play end							*/
+#define	AIXP_STAT_STOP		(0)		// Idling
+#define AIXP_STAT_PREP		(1)		// During playback preparation
+#define AIXP_STAT_PLAYING	(2)		// During decode and playback
+#define AIXP_STAT_PLAYEND	(3)		// Play end
+#define AIXP_STAT_ERROR		(4)		// Read-in error outbreak state
 
 //-------------------------------------------
 // big endian helpers
@@ -153,7 +153,10 @@ public:
 
 #include "criware_afs.h"
 
-// windows exclusive code
+//-------------------------------------------
+// main module exposed methods
+
+// windows exclusive
 void ADXWIN_SetupDvdFs(void* = nullptr);
 void ADXWIN_ShutdownDvdFs();
 void ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8);
@@ -161,16 +164,6 @@ void ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8);
 // threads
 void ADXM_SetupThrd(int* = nullptr);
 void ADXM_ShutdownThrd();
-
-// adx talk interface
-void ADXT_Init();
-void ADXT_Finish();
-ADXT_Object* ADXT_Create(int maxch, void* work, u_long work_size);
-void ADXT_Stop(ADXT_Object* obj);
-int  ADXT_GetStat(ADXT_Object* obj);
-void ADXT_StartFname(ADXT_Object* obj, const char* fname);
-void ADXT_SetOutVol(ADXT_Object* obj, int);
-void ADXT_StartAfs(ADXT_Object* obj, int patid, int fid);
 
 // hierarchy interface
 ADXFIC_Object* ADXFIC_Create(const char* dname, int mode, char* work, int wksize);
@@ -182,7 +175,17 @@ const char* ADXFIC_GetFileName(ADXFIC_Object* obj, u_long index);
 int ADXF_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfile);
 int ADXF_GetPtStat(int);
 
-// aix interface
+// adx talk interface
+void ADXT_Init();
+void ADXT_Finish();
+ADXT_Object* ADXT_Create(int maxch, void* work, u_long work_size);
+void ADXT_Stop(ADXT_Object* obj);
+int  ADXT_GetStat(ADXT_Object* obj);
+void ADXT_StartFname(ADXT_Object* obj, const char* fname);
+void ADXT_SetOutVol(ADXT_Object* obj, int);
+void ADXT_StartAfs(ADXT_Object* obj, int patid, int fid);
+
+// aix parsing interface
 int  AIXP_Init();
 void AIXP_Stop(AIXP_Object *obj);
 void AIXP_ExecServer();
