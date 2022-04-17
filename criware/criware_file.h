@@ -9,7 +9,8 @@
 // file helpers
 HANDLE ADXF_OpenFile(const char* filename);
 void ADXF_CloseFile(HANDLE fp);
-void ADXF_ReadFile(HANDLE fp, void* buffer, size_t size);
+u_long ADXF_ReadFile(HANDLE fp, void* buffer, size_t size);
+u_long ADXF_Tell(HANDLE fp);
 
 // generic streaming interface
 class CriFileStream
@@ -34,7 +35,9 @@ public:
 
 	virtual void Read(void* buffer, size_t size) {}
 	virtual void Seek(u_long pos, u_long mode) {}
+	virtual u_long Decode(int16_t* buffer, unsigned samples_needed, bool looping_enabled) { return 0; }
 
+	// attributes
 	u_long copyright_offset,
 		block_size,
 		sample_bitdepth,
@@ -45,9 +48,99 @@ public:
 		loop_enabled,
 		loop_start_index,
 		loop_end_index;
+	// decoding fields
 	short past_samples[16];
-	u_long sample_index;
 	short coefficient[2];
+	u_long sample_index;
+};
+
+// WAV streaming interface, for AFS voices
+class WAVStream : public CriFileStream
+{
+public:
+	WAVStream()
+	{
+
+	}
+
+	~WAVStream()
+	{
+
+	}
+
+	int Open(HANDLE fp, u_long pos);
+
+	virtual void Read(void* buffer, size_t size) {}
+	virtual void Seek(u_long pos, u_long mode) {}
+	virtual u_long Decode(int16_t* buffer, unsigned samples_needed, bool looping_enabled);
+
+	HANDLE fp;
+	u_long start;
+
+private:
+	typedef struct WAV_riff
+	{
+		unsigned long ChunkID,
+			ChunkSize,
+			Format;
+	} wav_riff;
+
+	typedef struct WAV_fmt
+	{
+		unsigned short AudioFormat;    // Audio format 1=PCM,6=mulaw,7=alaw, 257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM 
+		unsigned short NumOfChan;      // Number of channels 1=Mono 2=Sterio                   
+		unsigned long  SamplesPerSec;  // Sampling Frequency in Hz                             
+		unsigned long  bytesPerSec;    // bytes per second 
+		unsigned short blockAlign;     // 2=16-bit mono, 4=16-bit stereo 
+		unsigned short bitsPerSample;  // Number of bits per sample      
+	} wav_fmt;
+
+	typedef struct WAV_chunk
+	{
+		DWORD magic,
+			size;
+	} wav_chunk;
+
+	typedef struct sample
+	{
+		DWORD cue_point_id,
+			type,
+			start,
+			end,
+			fraction,
+			play_count;
+	} sample;
+
+	typedef struct SMPL_chunk
+	{
+		DWORD Manufacturer,
+			Product,
+			Sample_period,
+			MIDI_unity_note,
+			MIDI_pitch_fraction,
+			SMPTE_format,
+			SMPTE_offset,
+			Num_sample_loops,
+			Sampler_data;
+	} smpl_chunk;
+
+	enum
+	{
+		Type_PCM,
+		Type_FLOAT
+	};
+
+	int find_data();
+	void pcm_read(BYTE* dst, size_t samples);
+	void pcm_seek(size_t sample_pos);
+	size_t pcm_tell();
+
+	void fill(BYTE* dst, DWORD size);
+
+	wav_fmt fmt;
+	size_t wav_size,
+		wav_pos;
+	int type, looped;
 };
 
 // ADX streaming interface, very simple
@@ -74,6 +167,7 @@ public:
 
 	virtual void Read(void* buffer, size_t size);
 	virtual void Seek(u_long pos, u_long mode);
+	virtual u_long Decode(int16_t* buffer, unsigned samples_needed, bool looping_enabled);
 
 	HANDLE fp;
 	u_long start;
@@ -150,6 +244,7 @@ public:
 
 	virtual void Read(void* buffer, size_t size);
 	virtual void Seek(u_long pos, u_long mode);
+	virtual u_long Decode(int16_t* buffer, unsigned samples_needed, bool looping_enabled);
 
 	AIX_Demuxer* parent;
 	u_long stream_id,

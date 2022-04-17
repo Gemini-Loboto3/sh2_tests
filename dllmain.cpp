@@ -66,46 +66,9 @@ HWND WinInit(HINSTANCE hInst)
 	return CreateWindowW(L"sh2test", L"ADX TEST", WS_OVERLAPPEDWINDOW, 0, 0, 640, 480, nullptr, nullptr, hInst, nullptr);
 }
 
-typedef struct Thread_data
-{
-	LPDIRECTSOUNDBUFFER pDB;
-	CriFileStream* adx;
-	u_long nBlockAlign;
-	int looping;
-} Thread_data;
-
-DWORD WINAPI test_thread(LPVOID data)
-{
-	Thread_data* ctx = (Thread_data*)data;
-
-	DWORD pos, bytes1, bytes2;
-	short *ptr1, *ptr2;
-
-	DWORD snd_dwOffset = 0;
-	while (ctx->looping)
-	{
-		DWORD add = 0;
-		const DWORD snd_dwBytes = BUFFER_QUART;
-
-		ctx->pDB->GetCurrentPosition(&pos, nullptr);
-
-		if (pos - snd_dwOffset < 0)
-			add = BUFFER_SIZE;
-		if (pos + add - snd_dwOffset > 2 * snd_dwBytes + 16)
-		{
-			ctx->pDB->Lock(snd_dwOffset, snd_dwBytes, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-			decode_adx_standard(ctx->adx, ptr1, bytes1 / ctx->nBlockAlign, 1);
-			ctx->pDB->Unlock(ptr1, bytes1, ptr2, bytes2);
-
-			auto total = snd_dwBytes + snd_dwOffset;
-			snd_dwOffset = total;
-			if (BUFFER_SIZE <= total)
-				snd_dwOffset = total - BUFFER_SIZE;
-		}
-	}
-
-	return 0;
-}
+#define TEST_ADX	0
+#define TEST_AIX	0
+#define TEST_AFS	1
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
@@ -128,26 +91,20 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	desc.lpwfxFormat = NULL;
 	pDS->CreateSoundBuffer(&desc, &pDB_main, nullptr);
 
-	ADXFIC_Create("data\\sound\\adx", 0, nullptr, 0);
-
-	AIX_Demuxer* aix;
-	OpenAIX("data\\sound\\adx\\hotel\\bgm_113.aix", &aix);
-	CriFileStream* in1 = &aix->stream[0];
-
 	ADXWIN_SetupSound(pDS);
 	ADXM_SetupThrd();
 
-	auto obj0 = ds_FindObj();
-	ds_CreateBuffer(obj0, in1);
-
-	//adxds_SetVolume(obj0, -100);
-	//adxds_SetVolume(obj1, -300);
-
-	ds_Play(obj0);
-	//adxds_Play(obj1);
-	//adxds_Play(obj2);
-	//adxds_Play(obj3);
-	//adxds_Play(obj4);
+#if TEST_AIX
+	AIXP_Object* aix = AIXP_Create(0, 0, nullptr, 0);
+	AIXP_StartFname(aix, "data\\sound\\adx\\hotel\\bgm_113.aix", nullptr);
+#elif TEST_ADX
+	ADXT_Object* adx = ADXT_Create(0, nullptr, 0);
+	ADXT_StartFname(adx, "data\\sound\\adx\\apart\\bgm_014.adx");
+#elif TEST_AFS
+	ADXF_LoadPartitionNw(0, "data\\sound\\adx\\voice\\voice.afs", nullptr, nullptr);
+	ADXT_Object* afs = ADXT_Create(0, nullptr, 0);
+	ADXT_StartAfs(afs, 0, 1);
+#endif
 
 	ShowWindow(hWnd, SW_SHOW);
 
@@ -165,9 +122,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			DispatchMessageW(&msg);
 		}
 
-		//DWORD pos;
-		//pDB->GetCurrentPosition(&pos, nullptr);
-
 		//HDC dc = GetDC(hWnd);
 		//char mes[32];
 		//sprintf_s(mes, sizeof(mes), "Pos %d/%d", ctx.adx->sample_index, in->total_samples);
@@ -175,9 +129,15 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		//ReleaseDC(hWnd, dc);
 	}
 
-	//WaitForSingleObject(hThread, INFINITE);
-	//pDB->Stop();
-	//CloseADX(adx);
+#if TEST_AIX
+	AIXP_Destroy(aix);
+#elif TEST_ADX
+	ADXT_Stop(adx);
+#elif TEST_AFS
+	ADXT_Stop(afs);
+#endif
+
+	ADXM_ShutdownThrd();
 
 	pDB_main->Release();
 	pDS->Release();

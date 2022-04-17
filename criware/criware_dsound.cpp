@@ -60,7 +60,7 @@ void ds_CreateBuffer(SndObj *obj, CriFileStream* stream)
 	DWORD bytes1, bytes2;
 	short* ptr1, * ptr2;
 	obj->pBuf->Lock(0, BUFFER_SIZE, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-	auto needed = decode_adx_standard(stream, ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
+	auto needed = stream->Decode(ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
 	if (needed && obj->loops == 0)
 	{
 		needed *= obj->fmt.nBlockAlign;
@@ -99,7 +99,7 @@ void adxds_SendData(SndObj *obj)
 
 		ADX_lock();
 		obj->pBuf->Lock(obj->offset, snd_dwBytes, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-		auto needed = decode_adx_standard(obj->str, ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
+		auto needed = obj->str->Decode(ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
 		if (needed && obj->loops == 0)
 		{
 			needed *= obj->fmt.nBlockAlign;
@@ -179,7 +179,7 @@ void ds_Update()
 		auto obj = &obj_tbl[i];
 		if (obj->used && obj->pBuf && obj->stopped == 0)
 		{
-			if (obj->loops == 0 && obj->str->sample_index == obj->str->loop_end_index)
+			if (obj->loops == 0 && obj->str->sample_index >= obj->str->loop_end_index)
 			{
 				obj->Stop();
 				if (obj->cbPlayEnd)

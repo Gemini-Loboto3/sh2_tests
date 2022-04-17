@@ -8,6 +8,7 @@
 * ===============================================================
 */
 #include "criware.h"
+#include <mmreg.h>
 
 // ------------------------------------------------
 // Helpers for debloating file code
@@ -22,7 +23,7 @@ void ADXF_CloseFile(HANDLE fp)
 	CloseHandle(fp);
 }
 
-void ADXF_ReadFile(HANDLE fp, void* buffer, size_t size)
+u_long ADXF_ReadFile(HANDLE fp, void* buffer, size_t size)
 {
 	DWORD read;
 	ReadFile(fp, buffer, size, &read, nullptr);
@@ -30,6 +31,167 @@ void ADXF_ReadFile(HANDLE fp, void* buffer, size_t size)
 	if (read != size)
 		OutputDebugStringA("Warning: read data is not the same as requested.\n");
 #endif
+
+	return read;
+}
+
+u_long ADXF_Tell(HANDLE fp)
+{
+	return SetFilePointer(fp, 0, nullptr, FILE_CURRENT);
+}
+
+// ------------------------------------------------
+// WAV stream code, normal file wrapping and chunk
+// parsing
+// ------------------------------------------------
+#define memalign(x, y) ((x + (y - 1)) & ~(y - 1))
+
+int WAVStream::Open(HANDLE _fp, u_long pos)
+{
+	fp = _fp;
+	start = pos;
+
+	// check if it's a valid RIFF WAVE
+	WAV_riff head;
+	ADXF_ReadFile(fp, &head, sizeof(head));
+	if ((head.ChunkID != 'RIFF' && head.ChunkID != 'FFIR') &&
+		(head.Format != 'WAVE' && head.Format != 'EVAW'))
+	{
+		return S_FALSE;
+	}
+
+	// process the relevant tags
+	if (find_data() == 0)
+		return 0;
+	// set position to the waveform
+	pcm_seek(0);
+
+	return S_OK;
+}
+
+u_long WAVStream::Decode(int16_t* buffer, unsigned samples_needed, bool looping_enabled)
+{
+	fill((BYTE*)buffer, samples_needed);
+	sample_index += samples_needed;
+	return 0;
+}
+
+void WAVStream::fill(BYTE* dst, DWORD samples)
+{
+	// doesn't loop and already past waveform position
+	if (!loop_enabled && looped)
+	{
+		// fill with silence
+		memset(dst, 0, samples * fmt.blockAlign);
+		return;
+	}
+
+	size_t cur_pos = pcm_tell();
+
+	if (cur_pos + samples >= loop_end_index)
+	{
+		int rest = loop_end_index - cur_pos;
+		// read whatever is at the end
+		pcm_read(dst, rest);
+		if (loop_enabled)
+		{
+			// restart the wave position
+			pcm_seek(loop_start_index);
+			// read the other reminder
+			pcm_read(&dst[rest / fmt.blockAlign], samples - rest);
+		}
+		else
+		{
+			// fill non looping with blanks
+			memset(&dst[rest / fmt.blockAlign], 0, (samples - rest) / fmt.blockAlign);
+			looped = 1;
+		}
+	}
+	else pcm_read(dst, samples);
+}
+
+int WAVStream::find_data()
+{
+	wav_chunk c;
+	bool parse_loop = true;
+
+	do
+	{
+		// parse all chunks until no data is left
+		ADXF_ReadFile(fp, &c, sizeof(c));
+
+		switch (c.magic)
+		{
+		case 'fmt ':	// found format chunk, store it
+		case ' tmf':
+			{
+				size_t pos = ADXF_Tell(fp);
+				ADXF_ReadFile(fp, &fmt, sizeof(fmt));
+				switch (fmt.AudioFormat)
+				{
+				case WAVE_FORMAT_PCM:
+					type = Type_PCM;
+					break;
+				case WAVE_FORMAT_IEEE_FLOAT:
+					type = Type_FLOAT;
+					break;
+				default:
+					return 0;
+				}
+
+				sample_rate = fmt.SamplesPerSec;
+				channel_count = fmt.NumOfChan;
+				SetFilePointer(fp, pos + c.size, nullptr, FILE_BEGIN);
+			}
+			continue;
+		case 'data':	// found data chunk
+		case 'atad':
+			// grab the necessary data for streaming
+			loop_start_index = 0;
+			wav_size = c.size;
+			loop_end_index = c.size / fmt.blockAlign;
+			sample_bitdepth = fmt.bitsPerSample;
+			total_samples = loop_end_index;
+			wav_pos = ADXF_Tell(fp);
+			parse_loop = false;
+			break;
+		}
+		// go to next chunk
+		SetFilePointer(fp, memalign(c.size, 4), nullptr, FILE_CURRENT);
+	} while (parse_loop);
+
+	return 1;
+}
+
+void WAVStream::pcm_read(BYTE* dst, size_t samples)
+{
+	switch (type)
+	{
+	case Type_PCM:
+		ADXF_ReadFile(fp, dst, samples * fmt.blockAlign);
+		break;
+	case Type_FLOAT:
+		{
+			int16_t* d16 = (int16_t*)dst;
+			for (int i = 0, count = samples * 2; i < count; i++)
+			{
+				float f;
+				ADXF_ReadFile(fp, &f, 4);
+				d16[i] = (int16_t)(f * 32768.f);
+			}
+		}
+		break;
+	}
+}
+
+void WAVStream::pcm_seek(size_t sample_pos)
+{
+	SetFilePointer(fp, wav_pos + sample_pos * fmt.blockAlign, nullptr, FILE_BEGIN);
+}
+
+size_t WAVStream::pcm_tell()
+{
+	return (SetFilePointer(fp, 0, nullptr, FILE_CURRENT) - wav_pos) / fmt.blockAlign;
 }
 
 // ------------------------------------------------
@@ -66,6 +228,11 @@ void ADXStream::Close()
 {
 	if(start == 0)
 		CloseHandle(fp);
+}
+
+u_long ADXStream::Decode(int16_t* buffer, unsigned samples_needed, bool looping_enabled)
+{
+	return decode_adx_standard(this, buffer, samples_needed, looping_enabled);
 }
 
 void ADXStream::Read(void* buffer, size_t size)
@@ -236,6 +403,11 @@ void AIX_Demuxer::RequestData(u_long count)
 // AIX stream, behaves the same as ADX streams but
 // from memory
 // ------------------------------------------------
+u_long AIXStream::Decode(int16_t* buffer, unsigned samples_needed, bool looping_enabled)
+{
+	return decode_adx_standard(this, buffer, samples_needed, looping_enabled);
+}
+
 void AIXStream::Read(void* buffer, size_t size)
 {
 #if !AIX_SEGMENTED

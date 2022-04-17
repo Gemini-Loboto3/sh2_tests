@@ -91,12 +91,38 @@ static void cb(LPVOID ctx)
 
 int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 {
-	ADXStream* stream = new ADXStream;
-	stream->Open(afs.fp, afs.entries[fid].pos);
-	if (FAILED(OpenADX(stream)))
+	CriFileStream* stream;
+	
+	// read magic word to detect type
+	SetFilePointer(afs.fp, afs.entries[fid].pos, nullptr, FILE_BEGIN);
+	DWORD magic;
+	ADXF_ReadFile(afs.fp, &magic, sizeof(magic));
+
+	// rewind back to where we need to be
+	SetFilePointer(afs.fp, afs.entries[fid].pos, nullptr, FILE_BEGIN);
+
+	// detect RIFF wave
+	if (magic == 'RIFF' || magic == 'FFIR')
 	{
-		MessageBoxA(nullptr, "Error opening ADX stream.", __FUNCTION__, MB_ICONERROR);
-		return 0;
+		auto wav = new WAVStream;
+		if (wav->Open(afs.fp, afs.entries[fid].pos) == S_FALSE)
+		{
+			MessageBoxA(nullptr, "Error opening WAV stream.", __FUNCTION__, MB_ICONERROR);
+			return 0;
+		}
+		stream = wav;
+	}
+	// assume ADX
+	else
+	{
+		auto adx = new ADXStream;
+		adx->Open(afs.fp, afs.entries[fid].pos);
+		if (FAILED(OpenADX(adx)))
+		{
+			MessageBoxA(nullptr, "Error opening ADX stream.", __FUNCTION__, MB_ICONERROR);
+			return 0;
+		}
+		stream = adx;
 	}
 
 	obj->state = ADXT_STAT_PLAYING;
