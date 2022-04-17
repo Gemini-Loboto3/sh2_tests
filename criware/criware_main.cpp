@@ -53,6 +53,9 @@ void ADXM_ShutdownThrd()
 	ADX_lock_close();
 }
 
+// leave empty
+void ADXM_ExecMain() {}
+
 int ADXF_LoadPartitionNw(int ptid, const char *filename, void *ptinfo, void *nfile)
 {
 	asf_LoadPartitionNw(ptid, filename, ptinfo, nfile);

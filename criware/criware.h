@@ -1,6 +1,8 @@
 #pragma once
 
+#ifdef _NVWA
 #include "..\nvwa\debug_new.h"
+#endif
 
 #include <windows.h>
 #include <dsound.h>
@@ -174,6 +176,7 @@ void ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8);
 // threads
 void ADXM_SetupThrd(int* = nullptr);
 void ADXM_ShutdownThrd();
+void ADXM_ExecMain();
 
 // hierarchy interface
 ADXFIC_Object* ADXFIC_Create(const char* dname, int mode, char* work, int wksize);
