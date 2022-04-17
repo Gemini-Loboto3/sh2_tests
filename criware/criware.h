@@ -78,7 +78,8 @@ public:
 		stream(nullptr),
 		obj(nullptr),
 		volume(0),
-		state(ADXT_STAT_STOP)
+		state(ADXT_STAT_STOP),
+		is_aix(0)
 	{}
 	~ADXT_Object()
 	{
@@ -90,11 +91,21 @@ public:
 		{
 			if (obj)
 			{
+				// wait for any pending data transfers
+				while (obj->trans_lock);
+				// lock the thread to avoid further transfers
+				ADX_lock();
 				obj->Stop();
 				obj->Release();
+				// unlock thread and trash the reference
+				ADX_unlock();
 				obj = nullptr;
 			}
-			if (stream) { delete stream; stream = nullptr; }
+			if (stream && !is_aix)
+			{
+				delete stream;
+				stream = nullptr;
+			}
 			state = ADXT_STAT_STOP;
 		}
 	}
@@ -106,7 +117,8 @@ public:
 	//
 	u_long work_size;
 	void* work;
-	int maxch;
+	u_short maxch,
+		is_aix;
 };
 
 class AIXP_Object

@@ -81,12 +81,9 @@ int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfil
 static void cb(LPVOID ctx)
 {
 	ADXT_Object* obj = (ADXT_Object*)ctx;
-
-	obj->obj->Release();
-	obj->obj = nullptr;
-	delete obj->stream;
-	obj->stream = nullptr;
+	//ADXT_Stop(obj);
 	obj->state = ADXT_STAT_PLAYEND;
+	obj->obj->stopped = 1;
 }
 
 int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
@@ -98,14 +95,14 @@ int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 	DWORD magic;
 	ADXF_ReadFile(afs.fp, &magic, sizeof(magic));
 
-	// rewind back to where we need to be
-	ADXF_Seek(afs.fp, afs.entries[fid].pos, FILE_BEGIN);
-
 	// detect RIFF wave
 	if (magic == 'RIFF' || magic == 'FFIR')
 	{
 		auto wav = new WAVStream;
-		if (wav->Open(afs.fp, afs.entries[fid].pos) == S_FALSE)
+		// we need to make a new handle for wav or this will crash badly
+		HANDLE fp = ADXF_OpenFile(afs.part_name.c_str());
+		ADXF_Seek(fp, afs.entries[fid].pos, FILE_BEGIN);
+		if (wav->Open(fp, afs.entries[fid].pos) == S_FALSE)
 		{
 			MessageBoxA(nullptr, "Error opening WAV stream.", __FUNCTION__, MB_ICONERROR);
 			return 0;
@@ -115,6 +112,9 @@ int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 	// assume ADX
 	else
 	{
+		// rewind back to where we need to be
+		ADXF_Seek(afs.fp, afs.entries[fid].pos, FILE_BEGIN);
+
 		auto adx = new ADXStream;
 		adx->Open(afs.fp, afs.entries[fid].pos);
 		if (FAILED(OpenADX(adx)))

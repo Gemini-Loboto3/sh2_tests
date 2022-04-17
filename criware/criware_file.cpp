@@ -29,7 +29,7 @@ u_long ADXF_ReadFile(HANDLE fp, void* buffer, size_t size)
 	ReadFile(fp, buffer, size, &read, nullptr);
 #if _DEBUG
 	if (read != size)
-		OutputDebugStringA("Warning: read data is not the same as requested.\n");
+		OutputDebugStringA(__FUNCTION__ "Warning: read data is not the same as requested.\n");
 #endif
 
 	return read;
@@ -196,7 +196,7 @@ void WAVStream::pcm_seek(size_t sample_pos)
 
 size_t WAVStream::pcm_tell()
 {
-	return (ADXF_Seek(fp, 0, FILE_CURRENT) - wav_pos) / fmt.blockAlign;
+	return (ADXF_Tell(fp) - wav_pos) / fmt.blockAlign;
 }
 
 // ------------------------------------------------
@@ -292,6 +292,7 @@ void AIX_Demuxer::Open(HANDLE _fp, u_long _stream_count, u_long total_size)
 		stream[i].parent = this;
 		stream[i].stream_id = i;
 		stream[i].MakeBuffer(total_size / stream_count);
+		stream[i].is_aix = 1;
 	}
 
 #if STR_AIX_CACHING

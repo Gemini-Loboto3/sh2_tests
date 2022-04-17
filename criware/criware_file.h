@@ -18,6 +18,7 @@ class CriFileStream
 {
 public:
 	CriFileStream() :
+		is_aix(0),
 		copyright_offset(0),
 		block_size(0),
 		sample_bitdepth(0),
@@ -38,6 +39,7 @@ public:
 	virtual void Seek(u_long pos, u_long mode) {}
 	virtual u_long Decode(int16_t* buffer, unsigned samples_needed, bool looping_enabled) { return 0; }
 
+	int is_aix;
 	// attributes
 	u_long copyright_offset,
 		block_size,
@@ -71,7 +73,8 @@ public:
 
 	~WAVStream()
 	{
-
+		if (fp != INVALID_HANDLE_VALUE)
+			CloseHandle(fp);
 	}
 
 	int Open(HANDLE fp, u_long pos);

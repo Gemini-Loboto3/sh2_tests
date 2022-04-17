@@ -52,13 +52,14 @@ void ds_CreateBuffer(SndObj *obj, CriFileStream* stream)
 	DSBUFFERDESC desc = { 0 };
 	desc.dwSize = sizeof(desc);
 	desc.lpwfxFormat = &obj->fmt;
-	desc.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | /*DSBCAPS_CTRL3D |*/ DSBCAPS_CTRLFREQUENCY | DSBCAPS_GETCURRENTPOSITION2 /*| DSBCAPS_LOCSOFTWARE*/;
+	desc.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | /*DSBCAPS_CTRL3D |*/ DSBCAPS_CTRLFREQUENCY /*| DSBCAPS_GETCURRENTPOSITION2*/ /*| DSBCAPS_LOCSOFTWARE*/;
 	desc.dwBufferBytes = BUFFER_SIZE;
 	if (FAILED(pDS8->CreateSoundBuffer(&desc, &obj->pBuf, nullptr)))
 		MessageBoxA(nullptr, "error", __FUNCTION__, MB_OK);
 
 	DWORD bytes1, bytes2;
 	short* ptr1, * ptr2;
+	obj->trans_lock = 1;
 	obj->pBuf->Lock(0, BUFFER_SIZE, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
 	auto needed = stream->Decode(ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
 	if (needed && obj->loops == 0)
@@ -67,6 +68,7 @@ void ds_CreateBuffer(SndObj *obj, CriFileStream* stream)
 		memset(&ptr1[(bytes1 - needed) / 2], 0, needed);
 	}
 	obj->pBuf->Unlock(ptr1, bytes1, ptr2, bytes2);
+	obj->trans_lock = 0;
 
 	obj->used = 1;
 	obj->offset = 0;
@@ -87,8 +89,7 @@ void adxds_SendData(SndObj *obj)
 	u_long add = 0, pos;
 	const DWORD snd_dwBytes = BUFFER_QUART;
 
-	ds_GetPosition(obj);
-	obj->pBuf->GetCurrentPosition(&pos, nullptr);
+	pos = ds_GetPosition(obj);
 
 	if (pos - obj->offset < 0)
 		add = BUFFER_SIZE;
@@ -97,7 +98,6 @@ void adxds_SendData(SndObj *obj)
 		DWORD bytes1, bytes2;
 		short* ptr1, * ptr2;
 
-		ADX_lock();
 		obj->pBuf->Lock(obj->offset, snd_dwBytes, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
 		auto needed = obj->str->Decode(ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
 		if (needed && obj->loops == 0)
@@ -106,7 +106,6 @@ void adxds_SendData(SndObj *obj)
 			memset(&ptr1[(bytes1 - needed) / 2], 0, needed);
 		}
 		obj->pBuf->Unlock(ptr1, bytes1, ptr2, bytes2);
-		ADX_unlock();
 
 		auto total = snd_dwBytes + obj->offset;
 		obj->offset = total;
@@ -158,6 +157,8 @@ int ds_GetStatus(SndObj* obj)
 		return DSOS_LOOPING;
 	if (status & DSBSTATUS_PLAYING)
 		return DSOS_PLAYING;
+	if (status & DSBSTATUS_TERMINATED)
+		return DSOS_ENDED;
 
 	return DSOS_ENDED;
 }

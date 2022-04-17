@@ -103,7 +103,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 #elif TEST_AFS
 	ADXF_LoadPartitionNw(0, "data\\sound\\adx\\voice\\voice.afs", nullptr, nullptr);
 	ADXT_Object* afs = ADXT_Create(0, nullptr, 0);
-	ADXT_StartAfs(afs, 0, 1);
+	ADXT_StartAfs(afs, 0, 2);
 #endif
 
 	ShowWindow(hWnd, SW_SHOW);

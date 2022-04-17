@@ -12,6 +12,7 @@
 static HANDLE hServer;
 static bool loop = true;
 static CRITICAL_SECTION ADX_crit;
+static int lock_cnt;
 
 //
 void ADX_lock_init()
@@ -26,12 +27,16 @@ void ADX_lock_close()
 
 void ADX_lock()
 {
-	EnterCriticalSection(&ADX_crit);
+	if(lock_cnt == 0)
+		EnterCriticalSection(&ADX_crit);
+	lock_cnt++;
 }
 
 void ADX_unlock()
 {
-	LeaveCriticalSection(&ADX_crit);
+	lock_cnt--;
+	if(lock_cnt == 0)
+		LeaveCriticalSection(&ADX_crit);
 }
 
 DWORD WINAPI server_thread(LPVOID params)
