@@ -11,7 +11,7 @@
 #include <mmreg.h>
 
 // ------------------------------------------------
-// Helpers for debloating file code
+// Helpers for debloating I/O code
 // ------------------------------------------------
 HANDLE ADXF_OpenFile(const char* filename)
 {
@@ -38,6 +38,11 @@ u_long ADXF_ReadFile(HANDLE fp, void* buffer, size_t size)
 u_long ADXF_Tell(HANDLE fp)
 {
 	return SetFilePointer(fp, 0, nullptr, FILE_CURRENT);
+}
+
+u_long ADXF_Seek(HANDLE fp, LONG pos, u_long mode)
+{
+	return SetFilePointer(fp, pos, nullptr, mode);
 }
 
 // ------------------------------------------------
@@ -141,7 +146,7 @@ int WAVStream::find_data()
 
 				sample_rate = fmt.SamplesPerSec;
 				channel_count = fmt.NumOfChan;
-				SetFilePointer(fp, pos + c.size, nullptr, FILE_BEGIN);
+				ADXF_Seek(fp, pos + c.size, FILE_BEGIN);
 			}
 			continue;
 		case 'data':	// found data chunk
@@ -157,7 +162,7 @@ int WAVStream::find_data()
 			break;
 		}
 		// go to next chunk
-		SetFilePointer(fp, memalign(c.size, 4), nullptr, FILE_CURRENT);
+		ADXF_Seek(fp, memalign(c.size, 4), FILE_CURRENT);
 	} while (parse_loop);
 
 	return 1;
@@ -186,12 +191,12 @@ void WAVStream::pcm_read(BYTE* dst, size_t samples)
 
 void WAVStream::pcm_seek(size_t sample_pos)
 {
-	SetFilePointer(fp, wav_pos + sample_pos * fmt.blockAlign, nullptr, FILE_BEGIN);
+	ADXF_Seek(fp, wav_pos + sample_pos * fmt.blockAlign, FILE_BEGIN);
 }
 
 size_t WAVStream::pcm_tell()
 {
-	return (SetFilePointer(fp, 0, nullptr, FILE_CURRENT) - wav_pos) / fmt.blockAlign;
+	return (ADXF_Seek(fp, 0, FILE_CURRENT) - wav_pos) / fmt.blockAlign;
 }
 
 // ------------------------------------------------
@@ -232,7 +237,7 @@ void ADXStream::Close()
 
 u_long ADXStream::Decode(int16_t* buffer, unsigned samples_needed, bool looping_enabled)
 {
-	return decode_adx_standard(this, buffer, samples_needed, looping_enabled);
+	return ADXDEC_Decode(this, buffer, samples_needed, looping_enabled);
 }
 
 void ADXStream::Read(void* buffer, size_t size)
@@ -263,13 +268,13 @@ void ADXStream::Seek(u_long pos, u_long mode)
 	u_long npos = (pos + start) / STREAM_CACHE_SIZE;
 	if (npos != last_pos)
 	{
-		SetFilePointer(fp, npos * STREAM_CACHE_SIZE, nullptr, mode);
+		ADXF_Seek(fp, npos * STREAM_CACHE_SIZE, mode);
 		ADXF_ReadFile(fp, cache, STREAM_CACHE_SIZE);
 		last_pos = npos;
 	}
 	pos_cache = (pos + start) % STREAM_CACHE_SIZE;
 #else
-	SetFilePointer(fp, pos + start, nullptr, mode);
+	ADXF_Seek(fp, pos + start, mode);
 #endif
 }
 
@@ -405,7 +410,7 @@ void AIX_Demuxer::RequestData(u_long count)
 // ------------------------------------------------
 u_long AIXStream::Decode(int16_t* buffer, unsigned samples_needed, bool looping_enabled)
 {
-	return decode_adx_standard(this, buffer, samples_needed, looping_enabled);
+	return ADXDEC_Decode(this, buffer, samples_needed, looping_enabled);
 }
 
 void AIXStream::Read(void* buffer, size_t size)

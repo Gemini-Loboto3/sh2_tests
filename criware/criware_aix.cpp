@@ -44,7 +44,7 @@ int OpenAIX(const char* filename, AIX_Demuxer**obj)
 		s->loop_start_index = 0;
 		s->loop_end_index = s->total_samples;
 
-		adx_set_coeff(s);
+		ADXDEC_SetCoeff(s);
 	}
 
 	*obj = aix;

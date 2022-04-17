@@ -1,3 +1,5 @@
+#pragma once
+
 //-------------------------------------------
 typedef struct ADX_headerV3
 {
@@ -68,8 +70,8 @@ typedef struct ADX_headerV4
 		dummy5;					// 3C
 } ADX_headerV4;
 
-void adx_set_coeff(CriFileStream* adx);
-unsigned decode_adx_standard(CriFileStream* adx, short* buffer, unsigned samples_needed, bool looping_enabled);
+void ADXDEC_SetCoeff(CriFileStream* adx);
+unsigned ADXDEC_Decode(CriFileStream* adx, short* buffer, unsigned samples_needed, bool looping_enabled);
 
 int OpenADX(const char* filename, ADXStream** obj);
 int OpenADX(ADXStream* adx);

@@ -12,7 +12,7 @@
 #include <algorithm>
 #include "criware.h"
 
-void adx_set_coeff(CriFileStream* adx)
+void ADXDEC_SetCoeff(CriFileStream* adx)
 {
 	const double M_SQRT2 = 1.4142135623730951;
 	const double M_PI = 3.141592653589793;
@@ -71,7 +71,7 @@ static __inline short sbetole(short a)
 // samples_needed states how many sample 'sets' (one sample from every channel) need to be decoded to fill the buffer
 // looping_enabled is a boolean flag to control use of the built-in loop
 // Returns the number of sample 'sets' in the buffer that could not be filled (EOS)
-unsigned decode_adx_standard(CriFileStream* adx, int16_t* buffer, unsigned samples_needed, bool looping_enabled)
+unsigned ADXDEC_Decode(CriFileStream* adx, int16_t* buffer, unsigned samples_needed, bool looping_enabled)
 {
 	unsigned const samples_per_block = (adx->block_size - 2) * 8 / adx->sample_bitdepth;
 	int16_t scale[4];

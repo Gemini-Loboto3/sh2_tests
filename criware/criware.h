@@ -68,7 +68,7 @@ private:
 #include "criware_server.h"
 
 //-------------------------------------------
-// main exposed module
+// main objects for public interface
 class ADXT_Object
 {
 public:

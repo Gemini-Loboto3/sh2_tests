@@ -94,12 +94,12 @@ int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 	CriFileStream* stream;
 	
 	// read magic word to detect type
-	SetFilePointer(afs.fp, afs.entries[fid].pos, nullptr, FILE_BEGIN);
+	ADXF_Seek(afs.fp, afs.entries[fid].pos, FILE_BEGIN);
 	DWORD magic;
 	ADXF_ReadFile(afs.fp, &magic, sizeof(magic));
 
 	// rewind back to where we need to be
-	SetFilePointer(afs.fp, afs.entries[fid].pos, nullptr, FILE_BEGIN);
+	ADXF_Seek(afs.fp, afs.entries[fid].pos, FILE_BEGIN);
 
 	// detect RIFF wave
 	if (magic == 'RIFF' || magic == 'FFIR')

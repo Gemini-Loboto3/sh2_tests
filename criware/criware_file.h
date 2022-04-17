@@ -8,9 +8,10 @@
 
 // file helpers
 HANDLE ADXF_OpenFile(const char* filename);
-void ADXF_CloseFile(HANDLE fp);
+void   ADXF_CloseFile(HANDLE fp);
 u_long ADXF_ReadFile(HANDLE fp, void* buffer, size_t size);
 u_long ADXF_Tell(HANDLE fp);
+u_long ADXF_Seek(HANDLE fp, LONG pos, u_long mode);
 
 // generic streaming interface
 class CriFileStream
@@ -58,9 +59,14 @@ public:
 class WAVStream : public CriFileStream
 {
 public:
-	WAVStream()
+	WAVStream() : fp(INVALID_HANDLE_VALUE),
+		start(0),
+		fmt{0},
+		wav_size(0),
+		wav_pos(0),
+		type(0),
+		looped(0)
 	{
-
 	}
 
 	~WAVStream()
