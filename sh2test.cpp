@@ -56,7 +56,7 @@ void Inject_tests()
 	MakePageWritable(0x401000, 0x24A8FFF - 0x401000);
 
 #if 1
-	memset((void*)0x408A4A, 0x90, 5);	// remove Performance_set_thread
+	//memset((void*)0x408A4A, 0x90, 5);	// remove Performance_set_thread
 
 	INJECT(0x55F850, ADXFIC_Create);
 	INJECT(0x55F890, ADXFIC_GetNumFiles);
@@ -68,6 +68,7 @@ void Inject_tests()
 	INJECT(0x55F7F0, ADXWIN_SetupSound);
 
 	INJECT(0x55FD70, ADXM_SetupThrd);
+	INJECT(0x55FFB0, ADXM_ExecMain);
 	INJECT(0x55FFD0, ADXM_ShutdownThrd);
 	
 	INJECT(0x55E400, ADXF_LoadPartitionNw);
