@@ -62,107 +62,12 @@ private:
 	BYTE d[4];
 };
 
+#include "criware_server.h"
 #include "criware_file.h"
 #include "criware_dsound.h"
-#include "criware_aix.h"
 #include "criware_adx.h"
+#include "criware_aix.h"
 #include "criware_adxfic.h"
-#include "criware_server.h"
-
-//-------------------------------------------
-// main objects for public interface
-class ADXT_Object
-{
-public:
-	ADXT_Object() : work_size(0),
-		work(nullptr),
-		maxch(0),
-		stream(nullptr),
-		obj(nullptr),
-		volume(0),
-		state(ADXT_STAT_STOP),
-		is_aix(0)
-	{}
-	~ADXT_Object()
-	{
-	}
-	
-	void Release()
-	{
-		if (state != ADXT_STAT_STOP)
-		{
-			if (obj)
-			{
-				// wait for any pending data transfers
-				while (obj->trans_lock);
-				// lock the thread to avoid further transfers
-				ADX_lock();
-				obj->Stop();
-				obj->Release();
-				// unlock thread and trash the dsound reference
-				ADX_unlock();
-				obj = nullptr;
-			}
-			if (stream && !is_aix)
-				delete stream;
-			stream = nullptr;
-			state = ADXT_STAT_STOP;
-		}
-	}
-
-	CriFileStream* stream;
-	SndObj* obj;
-	int volume,
-		state;
-	//
-	u_long work_size;
-	void* work;
-	u_short maxch,
-		is_aix;
-};
-
-class AIXP_Object
-{
-public:
-	AIXP_Object() : stream_no(0),
-		aix(nullptr),
-		state(AIXP_STAT_STOP)
-	{
-	}
-	~AIXP_Object()
-	{
-		Release();
-	}
-
-	void Release()
-	{
-		if (state != AIXP_STAT_STOP)
-		{
-			for (int i = 0; i < stream_no; i++)
-			{
-				adxt[i].obj->Stop();
-				adxt[i].obj->Release();
-				adxt[i].obj = nullptr;
-			}
-			stream_no = 0;
-			memset(adxt, 0, sizeof(adxt));
-
-			if (aix)
-			{
-				delete aix;
-				aix = nullptr;
-			}
-
-			state = AIXP_STAT_STOP;
-		}
-	}
-
-	int stream_no,
-		state;
-	AIX_Demuxer* aix;
-	ADXT_Object adxt[8];
-};
-
 #include "criware_afs.h"
 
 //-------------------------------------------

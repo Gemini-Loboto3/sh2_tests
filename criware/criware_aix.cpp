@@ -7,6 +7,16 @@
 * ===============================================================
 */
 #include "criware.h"
+#include <chrono>
+
+#define MEASURE_ACCESS		1
+
+#if MEASURE_ACCESS
+DWORD TimeGetTime()
+{
+	return (DWORD)(std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() * 1000.);
+}
+#endif
 
 int OpenAIX(const char* filename, AIX_Demuxer**obj)
 {
@@ -49,4 +59,71 @@ int OpenAIX(const char* filename, AIX_Demuxer**obj)
 
 	*obj = aix;
 	return 1;
+}
+
+typedef struct AIX_THREAD_CTX
+{
+	AIXP_Object* obj;
+	const char* fname;
+} AIX_THREAD_CTX;
+
+static DWORD WINAPI aix_load_thread(LPVOID param)
+{
+#if MEASURE_ACCESS
+	DWORD start = TimeGetTime();
+	OutputDebugStringA(__FUNCTION__ ": preparing AIX...\n");
+#endif
+
+	auto obj = (AIXP_Object*)param;
+
+	AIX_Demuxer* aix;
+	if (OpenAIX(obj->fname, &aix) == 0)
+	{
+		obj->state = AIXP_STAT_ERROR;
+		return 0;
+	}
+	obj->aix = aix;
+	obj->stream_no = aix->stream_count;
+
+	// create the necessary buffers
+	for (int i = 0; i < obj->stream_no; i++)
+	{
+		obj->adxt[i].state = ADXT_STAT_PREP;
+		obj->adxt[i].stream = &aix->stream[i];
+		obj->adxt[i].obj = ds_FindObj();
+		obj->adxt[i].obj->loops = true;
+		obj->adxt[i].obj->adx = &obj->adxt[i];
+		obj->adxt[i].obj->CreateBuffer(obj->adxt[i].stream);
+	}
+	// flag any unused adxt as stopped
+	for (int i = obj->stream_no; i < _countof(obj->adxt); i++)
+		obj->adxt[i].state = ADXT_STAT_STOP;
+
+	obj->state = AIXP_STAT_PLAYING;
+	// kick all playback for all streams at once
+	for (int i = 0; i < obj->stream_no; i++)
+	{
+		obj->adxt[i].state = ADXT_STAT_PLAYING;
+		obj->adxt[i].obj->Play();
+	}
+
+#if MEASURE_ACCESS
+	char str[64];
+	sprintf_s(str, sizeof(str), __FUNCTION__ ": AIX done parsing in %dms, play!\n", TimeGetTime() - start);
+	OutputDebugStringA(str);
+#endif
+
+	return 0;
+}
+
+void aix_start(AIXP_Object* obj, const char* fname)
+{
+	obj->state = AIXP_STAT_PREP;
+	obj->fname = fname;
+	for (int i = 0; i < _countof(obj->adxt); i++)
+	{
+		obj->adxt[i].state = ADXT_STAT_DECINFO;
+		obj->adxt[i].is_aix = 1;
+	}
+	obj->th = CreateThread(nullptr, 0, aix_load_thread, obj, 0, nullptr);
 }

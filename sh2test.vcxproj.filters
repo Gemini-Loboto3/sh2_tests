@@ -43,8 +43,6 @@
     <ClInclude Include="d3d8.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="inject.h" />
-    <ClInclude Include="sh2test.h" />
-    <ClInclude Include="timer.h" />
     <ClInclude Include="criware\criware.h">
       <Filter>criware</Filter>
     </ClInclude>
@@ -119,7 +117,6 @@
     <ClCompile Include="d3d8_proxy.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="sh2test.cpp" />
-    <ClCompile Include="timer.cpp" />
     <ClCompile Include="util.cpp" />
     <ClCompile Include="criware\criware_aix.cpp">
       <Filter>criware</Filter>

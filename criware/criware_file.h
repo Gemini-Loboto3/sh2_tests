@@ -39,7 +39,7 @@ public:
 	virtual void Seek(u_long pos, u_long mode) {}
 	virtual u_long Decode(int16_t* buffer, unsigned samples_needed, bool looping_enabled) { return 0; }
 
-	int is_aix;
+	u_long is_aix;
 	// attributes
 	u_long copyright_offset,
 		block_size,

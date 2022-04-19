@@ -1,4 +1,5 @@
 #pragma once
+#include "criware_adx.h"
 
 enum DSOBJ_STATE
 {
@@ -17,8 +18,8 @@ public:
 		used(0),
 		loops(0),
 		stopped(0),
-		set_volume(0),
 		trans_lock(0),
+		stopping(0),
 		volume(0),
 		pBuf(nullptr),
 		str(nullptr),
@@ -37,7 +38,7 @@ public:
 	}
 
 	void Play();
-	void Stop();
+	int  Stop();
 
 	u_long GetPosition();
 	int GetStatus();
@@ -49,12 +50,13 @@ public:
 	u_long used : 1,
 		loops : 1,
 		stopped : 1,
-		set_volume : 1,
-		trans_lock : 1;		// failsafe for locking data transfers
+		trans_lock : 1,		// failsafe for locking data transfers
+		stopping : 1;
 	int volume;
 	WAVEFORMATEX fmt;
 	LPDIRECTSOUNDBUFFER pBuf;
 	CriFileStream* str;
+	ADXT_Object* adx;
 
 	SndCbPlayEnd cbPlayEnd;
 	LPVOID cbPlayContext;
@@ -70,6 +72,6 @@ u_long ds_GetPosition(SndObj* obj);
 void adxds_SendData(SndObj* obj);
 void ds_SetVolume(SndObj* obj, int vol);
 void ds_Play(SndObj* obj);
-void ds_Stop(SndObj* obj);
+int  ds_Stop(SndObj* obj);
 int ds_GetStatus(SndObj* obj);
 void ds_Release(SndObj* obj);

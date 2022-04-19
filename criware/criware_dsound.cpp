@@ -43,7 +43,7 @@ void ds_CreateBuffer(SndObj *obj, CriFileStream* stream)
 
 	obj->fmt.cbSize = sizeof(WAVEFORMATEX);
 	obj->fmt.nSamplesPerSec = stream->sample_rate;
-	obj->fmt.nBlockAlign = 2 * stream->channel_count;
+	obj->fmt.nBlockAlign = (WORD)(2 * stream->channel_count);
 	obj->fmt.nChannels = (WORD)stream->channel_count;
 	obj->fmt.wBitsPerSample = 16;
 	obj->fmt.wFormatTag = WAVE_FORMAT_PCM;
@@ -99,11 +99,23 @@ void adxds_SendData(SndObj *obj)
 		short* ptr1, * ptr2;
 
 		obj->pBuf->Lock(obj->offset, snd_dwBytes, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-		auto needed = obj->str->Decode(ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
-		if (needed && obj->loops == 0)
+		// just fill with silence if we're stopping
+		if (obj->stopping)
 		{
-			needed *= obj->fmt.nBlockAlign;
-			memset(&ptr1[(bytes1 - needed) / 2], 0, needed);
+#if _DEBUG
+			OutputDebugStringA(__FUNCTION__ ": sending silence...\n");
+#endif
+			memset(ptr1, 0, bytes1);
+		}
+		else
+		{
+			auto needed = obj->str->Decode(ptr1, bytes1 / obj->fmt.nBlockAlign, obj->loops);
+			if (needed && obj->loops == 0)
+			{
+				// fill trail with silence
+				needed *= obj->fmt.nBlockAlign;
+				memset(&ptr1[(bytes1 - needed) / 2], 0, needed);
+			}
 		}
 		obj->pBuf->Unlock(ptr1, bytes1, ptr2, bytes2);
 
@@ -124,25 +136,54 @@ void ds_SetVolume(SndObj* obj, int vol)
 	obj->volume = vol;
 	if (obj->used && obj->pBuf)
 		obj->pBuf->SetVolume(vol * 10);
-	else obj->set_volume = 1;
 }
 
 void ds_Play(SndObj* obj)
 {
-	if (obj->used && obj->pBuf)
-		obj->pBuf->Play(0, 0, DSBPLAY_LOOPING);
+	if (obj->used)
+	{
+		if (obj->adx && obj->adx->set_volume)
+		{
+			obj->SetVolume(obj->adx->volume);
+			obj->adx->set_volume = 0;
+		}
+
+		if(obj->pBuf)
+			obj->pBuf->Play(0, 0, DSBPLAY_LOOPING);
+	}
 }
 
-void ds_Stop(SndObj* obj)
+int ds_Stop(SndObj* obj)
 {
-	if (obj->used && obj->pBuf)
-	{
-		obj->pBuf->Stop();
+	// this is inactive or stopped already
+	if (obj->used == 0) return 1 ;
+	if (obj->stopped == 1) return 1;
 
-		int s;
-		do { s = ds_GetStatus(obj); } while (s == DSOS_LOOPING || s == DSOS_PLAYING);
+	if (obj->pBuf)
+	{
+		if (obj->stopping == 0)
+		{
+			// queue stop to directsound
+			obj->stopping = 1;
+			obj->pBuf->Stop();
+		}
+
+		// check if directsound is done
+		int s = ds_GetStatus(obj);
+		if (s == DSOS_LOOPING || s == DSOS_PLAYING)
+		{
+#if _DEBUG
+			OutputDebugStringA(__FUNCTION__ ": still playing, can't release...\n");
+#endif
+			return 0;	// still playing
+		}
+		
+		// ok, we're done!
 		obj->stopped = 1;
+		return 1;
 	}
+
+	return 0;
 }
 
 int ds_GetStatus(SndObj* obj)
@@ -178,7 +219,8 @@ void ds_Update()
 	for (int i = 0; i < MAX_OBJ; i++)
 	{
 		auto obj = &obj_tbl[i];
-		if (obj->used && obj->pBuf && obj->stopped == 0)
+		if (obj->used == 0) continue;
+		if (obj->pBuf && obj->stopped == 0)
 		{
 			if (obj->loops == 0 && obj->str->sample_index >= obj->str->loop_end_index)
 			{
@@ -188,10 +230,10 @@ void ds_Update()
 			}
 			else
 			{
-				if (obj->set_volume)
+				if (obj->adx && obj->adx->set_volume)
 				{
-					obj->SetVolume(obj->volume);
-					obj->set_volume = 0;
+					obj->SetVolume(obj->adx->volume);
+					obj->adx->set_volume = 0;
 				}
 				obj->SendData();
 			}
@@ -203,7 +245,7 @@ void ds_Update()
 // C++ helpers
 void SndObj::CreateBuffer(CriFileStream* stream) { ds_CreateBuffer(this, stream); };
 void SndObj::Play() { ds_Play(this); }
-void SndObj::Stop() { ds_Stop(this); }
+int  SndObj::Stop() { return ds_Stop(this); }
 
 u_long SndObj::GetPosition() { return ds_GetPosition(this); }
 int SndObj::GetStatus() { return ds_GetStatus(this); }

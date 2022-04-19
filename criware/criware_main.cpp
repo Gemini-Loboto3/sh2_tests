@@ -72,31 +72,20 @@ int ADXF_GetPtStat(int)
 // returns an ADXT_STAT value
 int ADXT_GetStat(ADXT_Object* obj)
 {
-#if 1
 	return obj->state;
-#else
-	if (obj->state == 1 && obj->obj)
-	{
-		switch (obj->obj->GetStatus())
-		{
-		case DSOS_LOOPING:
-		case DSOS_PLAYING:
-			return ADXT_STAT_PLAYING;
-		case DSOS_UNUSED:
-			return ADXT_STAT_STOP;
-		case DSOS_ENDED:
-			return ADXT_STAT_PLAYEND;
-		}
-	}
-
-	return ADXT_STAT_STOP;
-#endif
 }
 
 void ADXT_SetOutVol(ADXT_Object *obj, int volume)
 {
-	if(obj && obj->obj)
-		obj->obj->SetVolume(volume);
+	if (obj)
+	{
+		obj->volume = volume;
+		// if there's no dsound object queue a volume change
+		if (obj->obj == nullptr)
+			obj->set_volume = 1;
+		// otherwise just update the object directly
+		else obj->obj->SetVolume(volume);
+	}
 }
 
 // Starts to play ADX file with partition ID and file ID
@@ -127,6 +116,7 @@ void ADXT_StartFname(ADXT_Object* obj, const char* fname)
 	obj->stream = stream;
 	obj->obj = ds_FindObj();
 	obj->obj->loops = true;
+	obj->obj->adx = obj;
 
 	obj->obj->CreateBuffer(stream);
 	obj->obj->Play();
@@ -196,63 +186,18 @@ void AIXP_SetLpSw(AIXP_Object* obj, int sw)
 
 void AIXP_StartFname(AIXP_Object* obj, const char* fname, void* atr)
 {
-	AIX_Demuxer* aix;
-
-	obj->state = AIXP_STAT_PREP;
-	if (OpenAIX(fname, &aix) == 0)
-	{
-		obj->state = AIXP_STAT_ERROR;
-		return;
-	}
-	obj->aix = aix;
-	obj->stream_no = aix->stream_count;
-
-	// create the necessary buffers
-	for (int i = 0; i < obj->stream_no; i++)
-	{
-		obj->adxt[i].state = ADXT_STAT_PREP;
-		obj->adxt[i].stream = &aix->stream[i];
-		obj->adxt[i].obj = ds_FindObj();
-		obj->adxt[i].obj->loops = true;
-		obj->adxt[i].obj->CreateBuffer(obj->adxt[i].stream);
-	}
-
-	// kick all playback for all streams at once
-	for (int i = 0; i < obj->stream_no; i++)
-	{
-		obj->adxt[i].state = ADXT_STAT_PLAYING;
-		obj->adxt[i].obj->Play();
-	}
-
-	obj->state = AIXP_STAT_PLAYING;
+	aix_start(obj, fname);
 }
 
 ADXT_Object* AIXP_GetAdxt(AIXP_Object* obj, int trno)
 {
-	if (trno >= obj->stream_no)
-		return nullptr;
+	//if (trno >= obj->stream_no)
+	//	return nullptr;
 
 	return &obj->adxt[trno];
 }
 
 int AIXP_GetStat(AIXP_Object* obj)
 {
-#if 1
 	return obj->state;
-#else
-	if (obj->state == 1 && obj->adxt[0].obj)
-	{
-		switch (obj->adxt[0].obj->GetStatus())
-		{
-		case DSOS_PLAYING:
-		case DSOS_LOOPING:
-			return AIXP_STAT_PLAYING;
-		case DSOS_UNUSED:
-			return AIXP_STAT_STOP;
-		case DSOS_ENDED:
-			return AIXP_STAT_PLAYEND;
-		}
-	}
-	return AIXP_STAT_STOP;
-#endif
 }

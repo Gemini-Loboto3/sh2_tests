@@ -135,8 +135,40 @@ int OpenADX(const char* filename, ADXStream** obj)
 	return 1;
 }
 
-void CloseADX(ADXStream* adx)
+void ADXT_Object::Release()
 {
-	adx->Close();
-	delete adx;
+	if (state != ADXT_STAT_STOP)
+	{
+		if (is_blocking)
+		{
+			if (obj)
+			{
+				// wait for any pending data transfers
+				while (obj->trans_lock);
+				// lock the thread to avoid further transfers
+				ADX_lock();
+				obj->Stop();
+				obj->Release();
+				// unlock thread and trash the dsound reference
+				ADX_unlock();
+				obj = nullptr;
+			}
+			if (stream && !is_aix)
+				delete stream;
+			stream = nullptr;
+			state = ADXT_STAT_STOP;
+		}
+		else
+		{
+			if (obj->Stop())
+			{
+				obj->Release();
+				obj = nullptr;
+			}
+			if (stream && !is_aix)
+				delete stream;
+			stream = nullptr;
+			state = ADXT_STAT_STOP;
+		}
+	}
 }

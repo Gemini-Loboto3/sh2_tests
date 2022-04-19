@@ -12,7 +12,7 @@
 static HANDLE hServer;
 static bool loop = true;
 static CRITICAL_SECTION ADX_crit;
-static int lock_cnt;
+static int lock_cnt = 0;
 
 //
 void ADX_lock_init()
@@ -44,7 +44,7 @@ DWORD WINAPI server_thread(LPVOID params)
 	while (loop)
 	{
 		ds_Update();
-		Sleep(1);	// just give the thread enough time for locking from external operations
+		Sleep(2);	// just give the thread enough time for locking from external operations
 					// used to be 10 milliseconds, but that seems to introduce lag when swapping weapons on weaker processors
 	}
 

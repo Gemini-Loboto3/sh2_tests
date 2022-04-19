@@ -67,7 +67,7 @@ int WAVStream::Open(HANDLE _fp, u_long pos)
 
 	// process the relevant tags
 	if (find_data() == 0)
-		return 0;
+		return S_FALSE;
 	// set position to the waveform
 	pcm_seek(0);
 
@@ -300,7 +300,7 @@ void AIX_Demuxer::Open(HANDLE _fp, u_long _stream_count, u_long total_size)
 #endif
 
 #if AIX_SEGMENTED
-	// request the necessary amount of data for header and a chunk of ADX
+	// request the necessary amount of data for headers and one block of samples
 	RequestData(2);
 #else
 	AIX_CHUNK chunk;

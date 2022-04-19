@@ -59,4 +59,50 @@ typedef struct AIXE_HEADER
 	BYTE magic[4];	// AIXE
 } AIXE_HEADER;
 
+class AIXP_Object
+{
+public:
+	AIXP_Object() : stream_no(0),
+		aix(nullptr),
+		state(AIXP_STAT_STOP)
+	{
+	}
+	~AIXP_Object()
+	{
+		Release();
+	}
+
+	void Release()
+	{
+		if (state != AIXP_STAT_STOP)
+		{
+			for (int i = 0; i < stream_no; i++)
+			{
+				adxt[i].obj->Stop();
+				adxt[i].obj->Release();
+				adxt[i].obj = nullptr;
+			}
+			stream_no = 0;
+			memset(adxt, 0, sizeof(adxt));
+
+			if (aix)
+			{
+				delete aix;
+				aix = nullptr;
+			}
+
+			state = AIXP_STAT_STOP;
+		}
+	}
+
+	int stream_no,
+		state;
+	AIX_Demuxer* aix;
+	ADXT_Object adxt[8];
+	HANDLE th;		// initial caching thread
+	const char* fname;
+};
+
 int OpenAIX(const char* filename, AIX_Demuxer** obj);
+
+void aix_start(AIXP_Object* obj, const char* fname);

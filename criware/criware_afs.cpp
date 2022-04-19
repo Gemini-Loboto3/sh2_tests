@@ -81,8 +81,8 @@ int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfil
 static void cb(LPVOID ctx)
 {
 	ADXT_Object* obj = (ADXT_Object*)ctx;
-	ADXT_Stop(obj);
-	//obj->state = ADXT_STAT_PLAYEND;
+	//ADXT_Stop(obj);
+	obj->state = ADXT_STAT_PLAYEND;		// signal that it's done playing the full waveform
 }
 
 int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
@@ -124,14 +124,17 @@ int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 		stream = adx;
 	}
 
-	obj->state = ADXT_STAT_PLAYING;
 	obj->stream = stream;
 	obj->obj = ds_FindObj();
+	obj->obj->adx = obj;
 	obj->obj->loops = stream->loop_enabled;
+	obj->is_blocking = 1;
 	obj->obj->SetEndCallback(cb, obj);
 
 	obj->obj->CreateBuffer(stream);
 	obj->obj->Play();
+
+	obj->state = ADXT_STAT_PLAYING;
 
 	return 1;
 }

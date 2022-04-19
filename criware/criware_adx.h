@@ -70,6 +70,41 @@ typedef struct ADX_headerV4
 		dummy5;					// 3C
 } ADX_headerV4;
 
+class SndObj;	// forward declaration
+
+class ADXT_Object
+{
+public:
+	ADXT_Object() : work_size(0),
+		work(nullptr),
+		maxch(0),
+		stream(nullptr),
+		obj(nullptr),
+		volume(0),
+		state(ADXT_STAT_STOP),
+		is_aix(0),
+		is_blocking(0),
+		set_volume(0)
+	{}
+	~ADXT_Object()
+	{
+	}
+
+	void Release();
+
+	CriFileStream* stream;
+	SndObj* obj;
+	int volume,
+		state;
+	//
+	u_long work_size;
+	void* work;
+	u_short maxch;
+	u_short is_aix : 1,
+		is_blocking : 1,
+		set_volume : 1;
+};
+
 void ADXDEC_SetCoeff(CriFileStream* adx);
 unsigned ADXDEC_Decode(CriFileStream* adx, short* buffer, unsigned samples_needed, bool looping_enabled);
 
