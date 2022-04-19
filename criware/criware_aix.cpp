@@ -12,9 +12,9 @@
 #define MEASURE_ACCESS		1
 
 #if MEASURE_ACCESS
-DWORD TimeGetTime()
+double TimeGetTime()
 {
-	return (DWORD)(std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() * 1000.);
+	return std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() * 1000.;
 }
 #endif
 
@@ -70,7 +70,7 @@ typedef struct AIX_THREAD_CTX
 static DWORD WINAPI aix_load_thread(LPVOID param)
 {
 #if MEASURE_ACCESS
-	DWORD start = TimeGetTime();
+	double start = TimeGetTime();
 	OutputDebugStringA(__FUNCTION__ ": preparing AIX...\n");
 #endif
 
@@ -109,7 +109,7 @@ static DWORD WINAPI aix_load_thread(LPVOID param)
 
 #if MEASURE_ACCESS
 	char str[64];
-	sprintf_s(str, sizeof(str), __FUNCTION__ ": AIX done parsing in %dms, play!\n", TimeGetTime() - start);
+	sprintf_s(str, sizeof(str), __FUNCTION__ ": AIX done parsing in %f ms, play!\n", TimeGetTime() - start);
 	OutputDebugStringA(str);
 #endif
 
