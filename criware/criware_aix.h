@@ -64,7 +64,9 @@ class AIXP_Object
 public:
 	AIXP_Object() : stream_no(0),
 		aix(nullptr),
-		state(AIXP_STAT_STOP)
+		state(AIXP_STAT_STOP),
+		fname(nullptr),
+		th(0)
 	{
 	}
 	~AIXP_Object()
@@ -72,28 +74,7 @@ public:
 		Release();
 	}
 
-	void Release()
-	{
-		if (state != AIXP_STAT_STOP)
-		{
-			for (int i = 0; i < stream_no; i++)
-			{
-				adxt[i].obj->Stop();
-				adxt[i].obj->Release();
-				adxt[i].obj = nullptr;
-			}
-			stream_no = 0;
-			memset(adxt, 0, sizeof(adxt));
-
-			if (aix)
-			{
-				delete aix;
-				aix = nullptr;
-			}
-
-			state = AIXP_STAT_STOP;
-		}
-	}
+	void Release();
 
 	int stream_no,
 		state;

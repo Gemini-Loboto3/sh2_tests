@@ -81,8 +81,7 @@ int asf_LoadPartitionNw(int ptid, const char* filename, void* ptinfo, void* nfil
 static void cb(LPVOID ctx)
 {
 	ADXT_Object* obj = (ADXT_Object*)ctx;
-	//ADXT_Stop(obj);
-	obj->state = ADXT_STAT_PLAYEND;		// signal that it's done playing the full waveform
+	obj->state = ADXT_STAT_PLAYEND;		// signal that it's done playing the full waveform (prevents hanging events in some cutscenes)
 }
 
 int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
@@ -94,7 +93,7 @@ int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 	DWORD magic;
 	ADXF_ReadFile(afs.fp, &magic, sizeof(magic));
 
-	// detect RIFF wave
+	// special case for AFS, detect RIFF wave
 	if (magic == 'RIFF' || magic == 'FFIR')
 	{
 		auto wav = new WAVStream;

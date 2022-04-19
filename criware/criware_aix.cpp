@@ -113,6 +113,8 @@ static DWORD WINAPI aix_load_thread(LPVOID param)
 	OutputDebugStringA(str);
 #endif
 
+	obj->th = 0;
+
 	return 0;
 }
 
@@ -125,5 +127,33 @@ void aix_start(AIXP_Object* obj, const char* fname)
 		obj->adxt[i].state = ADXT_STAT_DECINFO;
 		obj->adxt[i].is_aix = 1;
 	}
+
+	// just in case two AIX try to boot on the same object
+	if (obj->th)
+		WaitForSingleObject(obj->th, INFINITE);
+
 	obj->th = CreateThread(nullptr, 0, aix_load_thread, obj, 0, nullptr);
+}
+
+void AIXP_Object::Release()
+{
+	if (state != AIXP_STAT_STOP)
+	{
+		for (int i = 0; i < stream_no; i++)
+		{
+			adxt[i].obj->Stop();
+			adxt[i].obj->Release();
+			adxt[i].obj = nullptr;
+		}
+		stream_no = 0;
+		memset(adxt, 0, sizeof(adxt));
+
+		if (aix)
+		{
+			delete aix;
+			aix = nullptr;
+		}
+
+		state = AIXP_STAT_STOP;
+	}
 }
