@@ -9,7 +9,7 @@
 #include "criware.h"
 #include <chrono>
 
-#define MEASURE_ACCESS		1
+#define MEASURE_ACCESS		0
 
 #if MEASURE_ACCESS
 double TimeGetTime()
