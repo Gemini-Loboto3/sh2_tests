@@ -72,7 +72,10 @@ int ADXF_GetPtStat(int)
 // returns an ADXT_STAT value
 int ADXT_GetStat(ADXT_Object* obj)
 {
-	return obj->state;
+	if(obj)
+		return obj->state;
+
+	return ADXT_STAT_STOP;
 }
 
 void ADXT_SetOutVol(ADXT_Object *obj, int volume)
@@ -101,11 +104,15 @@ void ADXT_StartAfs(ADXT_Object* obj, int patid, int fid)
 
 void ADXT_Stop(ADXT_Object* obj)
 {
-	obj->Release();
+	if(obj)
+		obj->Release();
 }
 
 void ADXT_StartFname(ADXT_Object* obj, const char* fname)
 {
+	if (obj == nullptr)
+		return;
+
 	if (obj->state != ADXT_STAT_STOP)
 		ADXT_Stop(obj);
 
@@ -144,7 +151,8 @@ ADXT_Object* ADXT_Create(int maxch, void* work, u_long work_size)
 // Destroy an ADXT handle
 void ADXT_Destroy(ADXT_Object* adxt)
 {
-	delete adxt;
+	if(adxt)
+		delete adxt;
 }
 
 // leave empty
@@ -169,35 +177,46 @@ AIXP_Object* AIXP_Create(int maxntr, int maxnch, void* work, int worksize)
 
 void AIXP_Destroy(AIXP_Object* obj)
 {
-	delete obj;
+	if(obj)
+		delete obj;
 }
 
 void AIXP_Stop(AIXP_Object* obj)
 {
-	obj->Release();
+	if(obj)
+		obj->Release();
 }
 
 // set if this should loop
 void AIXP_SetLpSw(AIXP_Object* obj, int sw)
 {
+	if (obj == nullptr)
+		return;
+
 	for(int i = 0; i < obj->stream_no; i++)
 		obj->adxt[i].obj->loops = sw ? 1 : 0;
 }
 
 void AIXP_StartFname(AIXP_Object* obj, const char* fname, void* atr)
 {
+	if (obj == nullptr)
+		return;
+
 	aix_start(obj, fname);
 }
 
 ADXT_Object* AIXP_GetAdxt(AIXP_Object* obj, int trno)
 {
-	//if (trno >= obj->stream_no)
-	//	return nullptr;
+	if (obj == nullptr)
+		return nullptr;
 
 	return &obj->adxt[trno];
 }
 
 int AIXP_GetStat(AIXP_Object* obj)
 {
-	return obj->state;
+	if(obj)
+		return obj->state;
+
+	return AIXP_STAT_STOP;
 }
