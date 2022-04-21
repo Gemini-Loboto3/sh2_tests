@@ -3,8 +3,8 @@
 #include "framework.h"
 #include "inject.h"
 #include "dxrinput/dinput8_proxy.h"
-
 #include "criware\criware.h"
+#include <chrono>
 
 // makes the exe freely writable on DLL-side of code
 void MakePageWritable(unsigned long ulAddress, unsigned long ulSize)
@@ -40,14 +40,8 @@ LRESULT __stdcall WndProcedureEx(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 void Inject_xaudio2();
 
-void Inject_tests()
+void PatchCriware()
 {
-	MakePageWritable(0x401000, 0x24A8FFF - 0x401000);
-
-	// disable safe mode
-	*(DWORD*)0x4F7510 = 0xC3;
-	*(DWORD*)0x4F7010 = 0xC3;
-
 	INJECT(0x55F850, ADXFIC_Create);
 	INJECT(0x55F890, ADXFIC_GetNumFiles);
 	INJECT(0x55F8F0, ADXFIC_GetFileName);
@@ -60,7 +54,7 @@ void Inject_tests()
 	INJECT(0x55FD70, ADXM_SetupThrd);
 	INJECT(0x55FFB0, ADXM_ExecMain);
 	INJECT(0x55FFD0, ADXM_ShutdownThrd);
-	
+
 	INJECT(0x55E400, ADXF_LoadPartitionNw);
 	INJECT(0x55E570, ADXF_GetPtStat);
 
@@ -82,6 +76,23 @@ void Inject_tests()
 	INJECT(0x55D970, AIXP_GetAdxt);
 	INJECT(0x55D9A0, AIXP_SetLpSw);
 	INJECT(0x55DCE0, AIXP_ExecServer);
+}
+
+void Inject_tests()
+{
+	MakePageWritable(0x401000, 0x24A8FFF - 0x401000);
+
+	*(BYTE*)0x449019 = 0;		// fix that goddamn stupid lag
+
+	// disable safe mode
+	*(BYTE*)0x4F7510 = 0xC3;
+	*(BYTE*)0x4F7010 = 0xC3;
+
+#if _DEBUG
+	*(BYTE*)0x45A3F0 = 0xC3;	// kill mouse support, release mouse when debugging
+#endif
+
+	PatchCriware();
 
 	//INJECT_EXT(0x24A66F0, DirectInput8CreateProxy);
 	//INJECT(0x4010F0, WndProcedureEx);

@@ -66,19 +66,20 @@ HWND WinInit(HINSTANCE hInst)
 	return CreateWindowW(L"sh2test", L"ADX TEST", WS_OVERLAPPEDWINDOW, 0, 0, 640, 480, nullptr, nullptr, hInst, nullptr);
 }
 
-#define TEST_ADX	0
+#define TEST_ADX	1
 #define TEST_AIX	0
-#define TEST_AFS	1
+#define TEST_AFS	0
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
 	ADXF_LoadPartitionNw(0, "data\\sound\\adx\\voice\\voice.afs", nullptr, nullptr);
 
 	HWND hWnd = WinInit(hInstance);
+	ShowWindow(hWnd, SW_SHOW);
 
 	LPDIRECTSOUND8 pDS;
 	DirectSoundCreate8(nullptr, &pDS, nullptr);
-	if(FAILED(pDS->SetCooperativeLevel(hWnd, DSSCL_NORMAL)))
+	if(FAILED(pDS->SetCooperativeLevel(hWnd, DSSCL_EXCLUSIVE)))
 		MessageBoxA(hWnd, "failed", "ERRA", MB_OK);
 
 	LPDIRECTSOUNDBUFFER pDB_main;
@@ -99,14 +100,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	AIXP_StartFname(aix, "data\\sound\\adx\\hotel\\bgm_113.aix", nullptr);
 #elif TEST_ADX
 	ADXT_Object* adx = ADXT_Create(0, nullptr, 0);
-	ADXT_StartFname(adx, "data\\sound\\adx\\apart\\bgm_014.adx");
+	ADXT_StartFname(adx, "data\\sound\\adx\\town\\bgm_005.adx");
 #elif TEST_AFS
 	ADXF_LoadPartitionNw(0, "data\\sound\\adx\\voice\\voice.afs", nullptr, nullptr);
 	ADXT_Object* afs = ADXT_Create(0, nullptr, 0);
 	ADXT_StartAfs(afs, 0, 2);
 #endif
-
-	ShowWindow(hWnd, SW_SHOW);
 
 	MSG msg;
 	bool loop = true;
@@ -121,6 +120,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
 		}
+
+		ADXM_ExecMain();
 
 		//HDC dc = GetDC(hWnd);
 		//char mes[32];

@@ -34,7 +34,7 @@ public:
 
 	void Open(const char* filename)
 	{
-		fp = ADXF_OpenFile(filename);
+		fp = ADXF_OpenFile(filename, 1);
 		part_name = filename;
 	}
 
@@ -124,7 +124,7 @@ int asf_StartAfs(ADXT_Object* obj, int patid, int fid)
 	}
 
 	obj->stream = stream;
-	obj->obj = ds_FindObj();
+	obj->obj = adxs_FindObj();
 	obj->obj->adx = obj;
 	obj->obj->loops = stream->loop_enabled;
 	obj->is_blocking = 1;

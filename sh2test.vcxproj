@@ -30,19 +30,19 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugEXE|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <EnableASAN>false</EnableASAN>
@@ -50,7 +50,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseEXE|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -188,6 +188,7 @@
     <ClInclude Include="criware\criware_dsound.h" />
     <ClInclude Include="criware\criware_file.h" />
     <ClInclude Include="criware\criware_server.h" />
+    <ClInclude Include="criware\criware_sound.h" />
     <ClInclude Include="d3d8.h" />
     <ClInclude Include="dxrinput\dinput8_proxy.h" />
     <ClInclude Include="dxrinput\wrappers\rawinput.h" />
@@ -215,6 +216,7 @@
     <ClCompile Include="criware\criware_file.cpp" />
     <ClCompile Include="criware\criware_main.cpp" />
     <ClCompile Include="criware\criware_server.cpp" />
+    <ClCompile Include="criware\criware_sound.cpp" />
     <ClCompile Include="d3d8.cpp" />
     <ClCompile Include="d3d8_proxy.cpp" />
     <ClCompile Include="dllmain.cpp" />

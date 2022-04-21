@@ -70,7 +70,7 @@ typedef struct ADX_headerV4
 		dummy5;					// 3C
 } ADX_headerV4;
 
-class SndObj;	// forward declaration
+class SndObjBase;	// forward declaration
 
 class ADXT_Object
 {
@@ -93,7 +93,7 @@ public:
 	void Release();
 
 	CriFileStream* stream;
-	SndObj* obj;
+	SndObjBase* obj;
 	int volume,
 		state;
 	//
@@ -110,4 +110,5 @@ unsigned ADXDEC_Decode(CriFileStream* adx, short* buffer, unsigned samples_neede
 
 int OpenADX(const char* filename, ADXStream** obj);
 int OpenADX(ADXStream* adx);
-void CloseADX(ADXStream* adx);
+
+void adx_StartFname(ADXT_Object* obj, const char* fname);

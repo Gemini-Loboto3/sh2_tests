@@ -84,6 +84,9 @@
     <ClInclude Include="nvwa\static_assert.h">
       <Filter>nvwa</Filter>
     </ClInclude>
+    <ClInclude Include="criware\criware_sound.h">
+      <Filter>criware</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dxrinput\device_dinput.cpp">
@@ -148,6 +151,9 @@
     </ClCompile>
     <ClCompile Include="nvwa\debug_new.cpp">
       <Filter>nvwa</Filter>
+    </ClCompile>
+    <ClCompile Include="criware\criware_sound.cpp">
+      <Filter>criware</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

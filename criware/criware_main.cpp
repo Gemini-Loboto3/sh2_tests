@@ -35,7 +35,7 @@ void ADXWIN_ShutdownDvdFs() {}
 
 void ADXWIN_SetupSound(LPDIRECTSOUND8 pDS8)
 {
-	ds_SetupSound(pDS8);
+	adxs_SetupDSound(pDS8);
 }
 
 // initializes the threads used by the ADX server
@@ -54,7 +54,14 @@ void ADXM_ShutdownThrd()
 }
 
 // leave empty
-void ADXM_ExecMain() {}
+int ADXM_ExecMain()
+{
+#if !ADX_SERVER_ENABLE
+	ds_Update();
+#endif
+
+	return 1;
+}
 
 int ADXF_LoadPartitionNw(int ptid, const char *filename, void *ptinfo, void *nfile)
 {
@@ -72,10 +79,10 @@ int ADXF_GetPtStat(int)
 // returns an ADXT_STAT value
 int ADXT_GetStat(ADXT_Object* obj)
 {
-	if(obj)
-		return obj->state;
+	if (obj)
+		return ADXT_STAT_PLAYEND;//obj->state;
 
-	return ADXT_STAT_STOP;
+	return -1;
 }
 
 void ADXT_SetOutVol(ADXT_Object *obj, int volume)
@@ -113,20 +120,7 @@ void ADXT_StartFname(ADXT_Object* obj, const char* fname)
 	if (obj == nullptr)
 		return;
 
-	if (obj->state != ADXT_STAT_STOP)
-		ADXT_Stop(obj);
-
-	ADXStream *stream;
-	OpenADX(fname, &stream);
-
-	obj->state = ADXT_STAT_PLAYING;
-	obj->stream = stream;
-	obj->obj = ds_FindObj();
-	obj->obj->loops = true;
-	obj->obj->adx = obj;
-
-	obj->obj->CreateBuffer(stream);
-	obj->obj->Play();
+	adx_StartFname(obj, fname);
 }
 
 // initializes the "talk" module, whatever that does
@@ -156,7 +150,7 @@ void ADXT_Destroy(ADXT_Object* adxt)
 }
 
 // leave empty
-int AIXP_Init() { return 0; }
+void AIXP_Init() {}
 
 // leave empty
 void AIXP_ExecServer() {}

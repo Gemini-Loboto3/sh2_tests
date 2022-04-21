@@ -21,15 +21,6 @@ void SetD3D8()
 		fp[2] = GetProcAddress(dll, "DebugSetMute");
 		fp[3] = GetProcAddress(dll, "Direct3DCreate8");
 	}
-
-	//proxy = LoadLibraryW(L"sh2ee.dll");
-	//if (proxy)
-	//{
-	//	fp[0] = GetProcAddress(proxy, "ValidatePixelShader");
-	//	fp[1] = GetProcAddress(proxy, "ValidateVertexShader");
-	//	fp[2] = GetProcAddress(LoadLibraryA("d3d9.dll"), "DebugSetMute");
-	//	fp[3] = GetProcAddress(proxy, "Direct3DCreate8");
-	//}
 }
 
 void ClearD3D8()
@@ -40,15 +31,15 @@ void ClearD3D8()
 
 void __declspec(naked) ValidatePixelShader()  { __asm {jmp fp[0 * 4]}; }
 void __declspec(naked) ValidateVertexShader() { __asm {jmp fp[1 * 4]}; }
-void __declspec(naked) _DebugSetMute()         { __asm {jmp fp[2 * 4]}; }
-#ifdef NDEBUG
+void __declspec(naked) _DebugSetMute()        { __asm {jmp fp[2 * 4]}; }
+#if 0
 void __declspec(naked) _Direct3DCreate8()     { __asm {jmp fp[3 * 4]}; }
 #else
 typedef IDirect3D8* (WINAPI *create)(UINT SDKVersion);
 
 IDirect3D8* WINAPI _Direct3DCreate8(UINT SDKVersion)
 {
-	IDirect3D8 *d3d8 = ((create)fp[3])(SDKVersion);
+	IDirect3D8 *d3d8 = ((create)fp[3])(SDKVersion);		// call the true Direct3DCreate8
 	IDirect3D8Proxy* proxy = new IDirect3D8Proxy();
 	proxy->d3d8 = d3d8;
 

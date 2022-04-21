@@ -3,6 +3,66 @@
 
 HWND mainWindow;
 
+PBITMAPINFO CreateBitmapInfoStruct(HWND hwnd, HBITMAP hBmp)
+{
+	BITMAP bmp;
+	PBITMAPINFO pbmi;
+	WORD    cClrBits;
+
+	// Retrieve the bitmap color format, width, and height.  
+	GetObject(hBmp, sizeof(BITMAP), (LPSTR)&bmp);
+
+	// Convert the color format to a count of bits.  
+	cClrBits = (WORD)(bmp.bmPlanes * bmp.bmBitsPixel);
+	if (cClrBits == 1)
+		cClrBits = 1;
+	else if (cClrBits <= 4)
+		cClrBits = 4;
+	else if (cClrBits <= 8)
+		cClrBits = 8;
+	else if (cClrBits <= 16)
+		cClrBits = 16;
+	else if (cClrBits <= 24)
+		cClrBits = 24;
+	else cClrBits = 32;
+
+	// Allocate memory for the BITMAPINFO structure. (This structure  
+	// contains a BITMAPINFOHEADER structure and an array of RGBQUAD  
+	// data structures.)  
+
+	if (cClrBits < 24)
+		pbmi = (PBITMAPINFO)new BYTE[sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * (1 << cClrBits)];
+
+	// There is no RGBQUAD array for these formats: 24-bit-per-pixel or 32-bit-per-pixel 
+
+	else
+		pbmi = (PBITMAPINFO)new BYTE[sizeof(BITMAPINFOHEADER)];
+
+	// Initialize the fields in the BITMAPINFO structure.  
+
+	pbmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	pbmi->bmiHeader.biWidth = bmp.bmWidth;
+	pbmi->bmiHeader.biHeight = bmp.bmHeight;
+	pbmi->bmiHeader.biPlanes = bmp.bmPlanes;
+	pbmi->bmiHeader.biBitCount = bmp.bmBitsPixel;
+	if (cClrBits < 24)
+		pbmi->bmiHeader.biClrUsed = (1 << cClrBits);
+
+	// If the bitmap is not compressed, set the BI_RGB flag.  
+	pbmi->bmiHeader.biCompression = BI_RGB;
+
+	// Compute the number of bytes in the array of color  
+	// indices and store the result in biSizeImage.  
+	// The width must be DWORD aligned unless the bitmap is RLE 
+	// compressed. 
+	pbmi->bmiHeader.biSizeImage = ((pbmi->bmiHeader.biWidth * cClrBits + 31) & ~31) / 8
+		* pbmi->bmiHeader.biHeight;
+	// Set biClrImportant to 0, indicating that all of the  
+	// device colors are important.  
+	pbmi->bmiHeader.biClrImportant = 0;
+	return pbmi;
+}
+
 void Gfx_resize_window(HWND hWnd, int width, int height, RECT* lpResRect)
 {
 	bool menu;
@@ -107,13 +167,13 @@ HRESULT IDirect3D8Proxy::GetDeviceCaps(UINT Adapter, D3DDEVTYPE DeviceType, D3DC
 HMONITOR IDirect3D8Proxy::GetAdapterMonitor(UINT Adapter) { return d3d8->GetAdapterMonitor(Adapter); }
 HRESULT IDirect3D8Proxy::CreateDevice(UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice8** ppReturnedDeviceInterface)
 {
-	pPresentationParameters->Windowed = true;
+	pPresentationParameters->Windowed = true;	// force windowed mode
 	auto hr = d3d8->CreateDevice(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
 
 	mainWindow = hFocusWindow;
-	Gfx_resize_window(mainWindow, pPresentationParameters->BackBufferWidth,
-		pPresentationParameters->BackBufferHeight, nullptr);
+	Gfx_resize_window(mainWindow, pPresentationParameters->BackBufferWidth, pPresentationParameters->BackBufferHeight, nullptr);
 	
+	// detour keks
 	d3d8dev = new IDirect3DDevice8Proxy();
 	d3d8dev->d3d8 = *ppReturnedDeviceInterface;
 	*ppReturnedDeviceInterface = (IDirect3DDevice8*)d3d8dev;
@@ -159,8 +219,7 @@ HRESULT IDirect3DDevice8Proxy::CreateAdditionalSwapChain(D3DPRESENT_PARAMETERS* 
 { return d3d8->CreateAdditionalSwapChain(pPresentationParameters, pSwapChain); }
 HRESULT IDirect3DDevice8Proxy::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 {
-	Gfx_resize_window(mainWindow, pPresentationParameters->BackBufferWidth,
-		pPresentationParameters->BackBufferHeight, nullptr);
+	Gfx_resize_window(mainWindow, pPresentationParameters->BackBufferWidth, pPresentationParameters->BackBufferHeight, nullptr);
 	return d3d8->Reset(pPresentationParameters);
 }
 HRESULT IDirect3DDevice8Proxy::Present(CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion)
@@ -176,7 +235,7 @@ void IDirect3DDevice8Proxy::GetGammaRamp(D3DGAMMARAMP* pRamp)
 HRESULT IDirect3DDevice8Proxy::CreateTexture(UINT Width, UINT Height, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DTexture8** ppTexture)
 { return d3d8->CreateTexture(Width, Height, Levels, Usage, Format, Pool, ppTexture); }
 HRESULT IDirect3DDevice8Proxy::CreateVolumeTexture(UINT Width, UINT Height, UINT Depth, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DVolumeTexture8** ppVolumeTexture)
-{ return S_OK; }
+{ return d3d8->CreateVolumeTexture(Width, Height, Depth, Levels, Usage, Format, Pool, ppVolumeTexture); }
 HRESULT IDirect3DDevice8Proxy::CreateCubeTexture(UINT EdgeLength, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DCubeTexture8** ppCubeTexture)
 { return d3d8->CreateCubeTexture(EdgeLength, Levels, Usage, Format, Pool, ppCubeTexture); }
 HRESULT IDirect3DDevice8Proxy::CreateVertexBuffer(UINT Length, DWORD Usage, DWORD FVF, D3DPOOL Pool, IDirect3DVertexBuffer8** ppVertexBuffer)
@@ -184,35 +243,51 @@ HRESULT IDirect3DDevice8Proxy::CreateVertexBuffer(UINT Length, DWORD Usage, DWOR
 HRESULT IDirect3DDevice8Proxy::CreateIndexBuffer(UINT Length, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DIndexBuffer8** ppIndexBuffer)
 { return d3d8->CreateIndexBuffer(Length, Usage, Format, Pool, ppIndexBuffer); }
 HRESULT IDirect3DDevice8Proxy::CreateRenderTarget(UINT Width, UINT Height, D3DFORMAT Format, D3DMULTISAMPLE_TYPE MultiSample, BOOL Lockable, IDirect3DSurface8** ppSurface)
-{ return S_OK; }
+{ return d3d8->CreateRenderTarget(Width, Height, Format, MultiSample, Lockable, ppSurface); }
 HRESULT IDirect3DDevice8Proxy::CreateDepthStencilSurface(UINT Width, UINT Height, D3DFORMAT Format, D3DMULTISAMPLE_TYPE MultiSample, IDirect3DSurface8** ppSurface)
-{ return S_OK; }
+{ return d3d8->CreateDepthStencilSurface(Width, Height, Format, MultiSample, ppSurface); }
 HRESULT IDirect3DDevice8Proxy::CreateImageSurface(UINT Width, UINT Height, D3DFORMAT Format, IDirect3DSurface8** ppSurface)
 { return d3d8->CreateImageSurface(Width, Height, Format, ppSurface); }
 HRESULT IDirect3DDevice8Proxy::CopyRects(IDirect3DSurface8* pSourceSurface, CONST RECT* pSourceRectsArray, UINT cRects, IDirect3DSurface8* pDestinationSurface, CONST POINT* pDestPointsArray)
-{ return S_OK; }
+{ return d3d8->CopyRects(pSourceSurface, pSourceRectsArray, cRects, pDestinationSurface, pDestPointsArray); }
 HRESULT IDirect3DDevice8Proxy::UpdateTexture(IDirect3DBaseTexture8* pSourceTexture, IDirect3DBaseTexture8* pDestinationTexture)
 { return d3d8->UpdateTexture(pSourceTexture, pDestinationTexture); }
 HRESULT IDirect3DDevice8Proxy::GetFrontBuffer(IDirect3DSurface8* pDestSurface)
 {
-#if 0
-	D3DLOCKED_RECT r0, r1;
-	pDestSurface->LockRect(&r0, 0, 0);
+#if 1	// basically make a screenshot of the window to get this working in windowed mode
+	auto hdcWin = GetDC(mainWindow);
+	auto hdcMem = CreateCompatibleDC(hdcWin);
+	
+	RECT rcClient;
+	GetClientRect(mainWindow, &rcClient);
+
+	auto hbmScreen = CreateCompatibleBitmap(hdcWin, rcClient.right - rcClient.left, rcClient.bottom - rcClient.top);
+	SelectObject(hdcMem, hbmScreen);
+	BitBlt(hdcMem, 0, 0, rcClient.right - rcClient.left, rcClient.bottom - rcClient.top, hdcWin, 0, 0, SRCCOPY);
+
+	auto info = CreateBitmapInfoStruct(mainWindow, hbmScreen);
+	INT bmpitch = info->bmiHeader.biWidth * info->bmiHeader.biBitCount / 8;
+	BYTE* lpBits = new BYTE[info->bmiHeader.biSizeImage];
+	GetDIBits(hdcWin, hbmScreen, 0, info->bmiHeader.biHeight, lpBits, info, DIB_RGB_COLORS);
+
+	D3DLOCKED_RECT rdst;
+	pDestSurface->LockRect(&rdst, 0, 0);
 	D3DSURFACE_DESC desc;
 	pDestSurface->GetDesc(&desc);
 
-	IDirect3DSurface8* pSrcSurface;
-	d3d8->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pSrcSurface);
-	pSrcSurface->LockRect(&r1, 0, 0);
+	UINT pitch = min(rdst.Pitch, bmpitch);
+	BYTE *dst = (BYTE*)rdst.pBits, *src = lpBits + info->bmiHeader.biSizeImage - bmpitch;
 
-	INT pitch = min(r0.Pitch, r1.Pitch);
-	BYTE *row0 = (BYTE*)r0.pBits, *row1 = (BYTE*)r1.pBits;
-	for (int y = 0; y < desc.Height; y++, row0 += r0.Pitch, row1 += r1.Pitch)
-		memcpy(row0, row1, pitch);
+	for (UINT y = 0; y < desc.Height; y++, dst += rdst.Pitch, src -= bmpitch)
+		memcpy(dst, src, pitch);
 
 	pDestSurface->UnlockRect();
-	pSrcSurface->UnlockRect();
-	pSrcSurface->Release();
+
+	delete[] lpBits;
+	delete[] info;
+	DeleteObject(hbmScreen);
+	DeleteObject(hdcMem);
+	ReleaseDC(mainWindow, hdcWin);
 
 	return S_OK;
 #else
@@ -262,13 +337,13 @@ HRESULT IDirect3DDevice8Proxy::SetRenderState(D3DRENDERSTATETYPE State, DWORD Va
 HRESULT IDirect3DDevice8Proxy::GetRenderState(D3DRENDERSTATETYPE State, DWORD* pValue)
 { return d3d8->GetRenderState(State, pValue); }
 HRESULT IDirect3DDevice8Proxy::BeginStateBlock()
-{ return S_OK; }
+{ return d3d8->BeginStateBlock(); }
 HRESULT IDirect3DDevice8Proxy::EndStateBlock(DWORD* pToken)
-{ return S_OK; }
+{ return d3d8->EndStateBlock(pToken); }
 HRESULT IDirect3DDevice8Proxy::ApplyStateBlock(DWORD Token)
-{ return S_OK; }
+{ return d3d8->ApplyStateBlock(Token); }
 HRESULT IDirect3DDevice8Proxy::CaptureStateBlock(DWORD Token)
-{ return S_OK; }
+{ return d3d8->CaptureStateBlock(Token); }
 HRESULT IDirect3DDevice8Proxy::DeleteStateBlock(DWORD Token)
 { return S_OK; }
 HRESULT IDirect3DDevice8Proxy::CreateStateBlock(D3DSTATEBLOCKTYPE Type, DWORD* pToken)
@@ -278,7 +353,7 @@ HRESULT IDirect3DDevice8Proxy::SetClipStatus(CONST D3DCLIPSTATUS8* pClipStatus)
 HRESULT IDirect3DDevice8Proxy::GetClipStatus(D3DCLIPSTATUS8* pClipStatus)
 { return S_OK; }
 HRESULT IDirect3DDevice8Proxy::GetTexture(DWORD Stage, IDirect3DBaseTexture8** ppTexture)
-{ return S_OK; }
+{ return d3d8->GetTexture(Stage, ppTexture); }
 HRESULT IDirect3DDevice8Proxy::SetTexture(DWORD Stage, IDirect3DBaseTexture8* pTexture)
 { return d3d8->SetTexture(Stage, pTexture); }
 HRESULT IDirect3DDevice8Proxy::GetTextureStageState(DWORD Stage, D3DTEXTURESTAGESTATETYPE Type, DWORD* pValue)
@@ -304,9 +379,9 @@ HRESULT IDirect3DDevice8Proxy::DrawIndexedPrimitive(D3DPRIMITIVETYPE p, UINT min
 HRESULT IDirect3DDevice8Proxy::DrawPrimitiveUP(D3DPRIMITIVETYPE PrimitiveType, UINT PrimitiveCount, CONST void* pVertexStreamZeroData, UINT VertexStreamZeroStride)
 { return d3d8->DrawPrimitiveUP(PrimitiveType, PrimitiveCount, pVertexStreamZeroData, VertexStreamZeroStride); }
 HRESULT IDirect3DDevice8Proxy::DrawIndexedPrimitiveUP(D3DPRIMITIVETYPE PrimitiveType, UINT MinVertexIndex, UINT NumVertexIndices, UINT PrimitiveCount, CONST void* pIndexData, D3DFORMAT IndexDataFormat, CONST void* pVertexStreamZeroData, UINT VertexStreamZeroStride)
-{ return S_OK; }
+{ return d3d8->DrawIndexedPrimitiveUP(PrimitiveType, MinVertexIndex, NumVertexIndices, PrimitiveCount, pIndexData, IndexDataFormat, pVertexStreamZeroData, VertexStreamZeroStride); }
 HRESULT IDirect3DDevice8Proxy::ProcessVertices(UINT SrcStartIndex, UINT DestIndex, UINT VertexCount, IDirect3DVertexBuffer8* pDestBuffer, DWORD Flags)
-{ return S_OK; }
+{ return d3d8->ProcessVertices(SrcStartIndex, DestIndex, VertexCount, pDestBuffer, Flags); }
 HRESULT IDirect3DDevice8Proxy::CreateVertexShader(CONST DWORD* pDeclaration, CONST DWORD* pFunction, DWORD* pHandle, DWORD Usage)
 { return d3d8->CreateVertexShader(pDeclaration, pFunction, pHandle, Usage); }
 HRESULT IDirect3DDevice8Proxy::SetVertexShader(DWORD Handle)
