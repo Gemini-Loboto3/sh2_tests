@@ -40,8 +40,17 @@ LRESULT __stdcall WndProcedureEx(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 void Inject_xaudio2();
 
+typedef struct CUTSCENE_DATA
+{
+	u_short timer0,
+		timer1;
+} CUTSCENE_DATA;
+
 void PatchCriware()
 {
+	// might be needed to catch any uncaught ADX code
+	memset((void*)0x55BE80, 0xFB, 0x56FB90 - 0x55BE80);
+
 	INJECT(0x55F850, ADXFIC_Create);
 	INJECT(0x55F890, ADXFIC_GetNumFiles);
 	INJECT(0x55F8F0, ADXFIC_GetFileName);
@@ -50,6 +59,7 @@ void PatchCriware()
 	INJECT(0x55F740, ADXWIN_SetupDvdFs);
 	INJECT(0x55F7C0, ADXWIN_ShutdownDvdFs);
 	INJECT(0x55F7F0, ADXWIN_SetupSound);
+	INJECT(0x55F800, ADXWIN_ShutdownSound);
 
 	INJECT(0x55FD70, ADXM_SetupThrd);
 	INJECT(0x55FFB0, ADXM_ExecMain);
@@ -93,6 +103,9 @@ void Inject_tests()
 #endif
 
 	PatchCriware();
+
+	auto cut = (CUTSCENE_DATA*)0x8DAEEC;
+	cut[1].timer1 = 181;
 
 	//INJECT_EXT(0x24A66F0, DirectInput8CreateProxy);
 	//INJECT(0x4010F0, WndProcedureEx);
