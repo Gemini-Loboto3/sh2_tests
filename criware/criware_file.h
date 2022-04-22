@@ -1,7 +1,7 @@
 #pragma once
 
 #define STR_ADX_CACHING		1		// caching switch for ADX
-#define STR_AIX_CACHING		1		// caching switch for AIX
+#define STR_AIX_CACHING		0		// caching switch for AIX
 #define STREAM_CACHE_SIZE	2048
 
 #define AIX_SEGMENTED		1		// set to 1 for caching on demand

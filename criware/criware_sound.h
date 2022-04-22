@@ -34,9 +34,6 @@ public:
 		memset(&fmt, 0, sizeof(fmt));
 		str = nullptr;
 		adx = nullptr;
-
-		cbPlayEnd = nullptr;
-		cbPlayContext = nullptr;
 	}
 
 	virtual void Play() {}
@@ -45,15 +42,6 @@ public:
 
 	virtual void SendData() {}
 	virtual void SetVolume(int vol) {}
-
-	void SetEndCallback(SndCbPlayEnd cb, LPVOID ctx)
-	{
-		cbPlayEnd = cb;
-		cbPlayContext = ctx;
-	}
-
-	SndCbPlayEnd cbPlayEnd;
-	LPVOID cbPlayContext;
 
 	u_long offset,
 		offset_played;

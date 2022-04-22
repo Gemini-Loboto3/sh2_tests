@@ -186,6 +186,7 @@
     <ClInclude Include="criware\criware.h" />
     <ClInclude Include="criware\criware_afs.h" />
     <ClInclude Include="criware\criware_aix.h" />
+    <ClInclude Include="criware\criware_debug.h" />
     <ClInclude Include="criware\criware_dsound.h" />
     <ClInclude Include="criware\criware_file.h" />
     <ClInclude Include="criware\criware_server.h" />
@@ -211,6 +212,7 @@
     <ClCompile Include="criware\criware_adx.cpp" />
     <ClCompile Include="criware\criware_adxfic.cpp" />
     <ClCompile Include="criware\criware_afs.cpp" />
+    <ClCompile Include="criware\criware_debug.cpp" />
     <ClCompile Include="criware\criware_decode.cpp" />
     <ClCompile Include="criware\criware_aix.cpp" />
     <ClCompile Include="criware\criware_dsound.cpp" />
