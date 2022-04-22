@@ -7,7 +7,7 @@
 #define AIX_SEGMENTED		1		// set to 1 for caching on demand
 
 // file helpers
-HANDLE ADXF_OpenFile(const char* filename, int overlapped = 0);
+HANDLE ADXF_OpenFile(const char* filename);
 void   ADXF_CloseFile(HANDLE fp);
 u_long ADXF_ReadFile(HANDLE fp, void* buffer, size_t size);
 u_long ADXF_Tell(HANDLE fp);

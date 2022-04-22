@@ -32,7 +32,7 @@ void ClearD3D8()
 void __declspec(naked) ValidatePixelShader()  { __asm {jmp fp[0 * 4]}; }
 void __declspec(naked) ValidateVertexShader() { __asm {jmp fp[1 * 4]}; }
 void __declspec(naked) _DebugSetMute()        { __asm {jmp fp[2 * 4]}; }
-#if 0
+#if 1
 void __declspec(naked) _Direct3DCreate8()     { __asm {jmp fp[3 * 4]}; }
 #else
 typedef IDirect3D8* (WINAPI *create)(UINT SDKVersion);

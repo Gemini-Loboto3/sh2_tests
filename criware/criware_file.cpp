@@ -13,7 +13,7 @@
 // ------------------------------------------------
 // Helpers for debloating I/O code
 // ------------------------------------------------
-HANDLE ADXF_OpenFile(const char* filename, int overlapped)
+HANDLE ADXF_OpenFile(const char* filename)
 {
 	return CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 }

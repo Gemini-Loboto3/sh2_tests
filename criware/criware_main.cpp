@@ -80,7 +80,7 @@ int ADXF_GetPtStat(int)
 int ADXT_GetStat(ADXT_Object* obj)
 {
 	if (obj)
-		return ADXT_STAT_PLAYEND;//obj->state;
+		return obj->state;
 
 	return -1;
 }

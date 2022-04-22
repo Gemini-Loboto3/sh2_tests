@@ -34,7 +34,7 @@ public:
 
 	void Open(const char* filename)
 	{
-		fp = ADXF_OpenFile(filename, 1);
+		fp = ADXF_OpenFile(filename);
 		part_name = filename;
 	}
 
