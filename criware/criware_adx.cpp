@@ -194,12 +194,14 @@ ADXT_Object::ADXT_Object() : work_size(0),
 
 ADXT_Object::~ADXT_Object()
 {
-	if (th != INVALID_HANDLE_VALUE)
+	if (th)
 	{
 		th_exit = 1;
 		WaitForSingleObject(th, INFINITE);
 		th = 0;
 	}
+
+	Release();
 }
 
 void ADXT_Object::Suspend()
@@ -224,33 +226,15 @@ void ADXT_Object::Release()
 {
 	if (state != ADXT_STAT_STOP)
 	{
-		if (is_blocking)
-		{
-			if (obj)
-			{
-				Suspend();
-				obj->Stop();
-				obj->Release();
-				obj = nullptr;
-			}
-			if (stream && !is_aix)
-				delete stream;
-			stream = nullptr;
-			state = ADXT_STAT_STOP;
-		}
-		else
-		{
-			if (obj->Stop())
-			{
-				Suspend();
-				obj->Release();
-				obj = nullptr;
-			}
-			if (stream && !is_aix)
-				delete stream;
-			stream = nullptr;
-			state = ADXT_STAT_STOP;
-		}
+		Suspend();
+			
+		obj->Stop();
+		obj->Release();
+		obj = nullptr;
+		if (stream && !is_aix)
+			delete stream;
+		stream = nullptr;
+		state = ADXT_STAT_STOP;
 	}
 }
 
@@ -266,7 +250,7 @@ void ADXT_Object::Thread()
 				obj->Update();
 			break;
 		}
-		Sleep(10);
+		Sleep(20);
 	}
 }
 

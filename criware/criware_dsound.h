@@ -6,9 +6,13 @@ class SndObjDSound : public SndObjBase
 {
 public:
 	SndObjDSound() : pBuf(nullptr)
-	{}
+	{
+		Release();
+	}
 	virtual ~SndObjDSound()
-	{}
+	{
+		Release();
+	}
 
 	virtual void CreateBuffer(CriFileStream* stream);
 
@@ -20,6 +24,7 @@ public:
 	virtual void SetVolume(int vol);
 	virtual void Release();
 
+private:
 	u_long GetPosition();
 	u_long GetPlayedSamples();
 	int GetStatus();

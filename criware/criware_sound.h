@@ -18,6 +18,10 @@ public:
 	{
 		Release();
 	}
+	virtual ~SndObjBase()
+	{
+		Release();
+	}
 
 	virtual void CreateBuffer(CriFileStream* stream) {}
 
@@ -28,7 +32,6 @@ public:
 		used = 0;
 		loops = 0;
 		stopped = 0;
-		trans_lock = 0;
 		stopping = 0;
 		volume = 0;
 		memset(&fmt, 0, sizeof(fmt));
@@ -48,7 +51,6 @@ public:
 	u_long used : 1,
 		loops : 1,
 		stopped : 1,
-		trans_lock : 1,		// failsafe for locking data transfers
 		stopping : 1;
 	int volume;
 	WAVEFORMATEX fmt;

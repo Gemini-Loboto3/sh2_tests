@@ -234,6 +234,11 @@ void SndObjDSound::Release()
 		pBuf->Release();
 		pBuf = nullptr;
 
+		ptr1 = nullptr;
+		bytes1 = 0;
+		ptr2 = nullptr;
+		bytes2 = 0;
+
 		SndObjBase::Release();
 	}
 }
