@@ -66,8 +66,8 @@ HWND WinInit(HINSTANCE hInst)
 	return CreateWindowW(L"sh2test", L"ADX TEST", WS_OVERLAPPEDWINDOW, 0, 0, 640, 480, nullptr, nullptr, hInst, nullptr);
 }
 
-#define TEST_ADX	1
-#define TEST_AIX	0
+#define TEST_ADX	0
+#define TEST_AIX	1
 #define TEST_AFS	0
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
