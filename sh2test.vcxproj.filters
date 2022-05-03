@@ -16,6 +16,12 @@
     <Filter Include="nvwa">
       <UniqueIdentifier>{177da1cb-1b09-406c-a4d8-a2018a433cd1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="d3d8_proxy">
+      <UniqueIdentifier>{1fd4d3d0-ea50-451a-9271-cdd1a1471adf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DirectAudio">
+      <UniqueIdentifier>{0de892f7-171b-4d49-b6a7-583fa4f13232}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
@@ -40,7 +46,6 @@
     <ClInclude Include="xaudio\audio_game.h">
       <Filter>xaudio2</Filter>
     </ClInclude>
-    <ClInclude Include="d3d8.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="inject.h" />
     <ClInclude Include="criware\criware.h">
@@ -90,6 +95,21 @@
     <ClInclude Include="criware\criware_debug.h">
       <Filter>criware</Filter>
     </ClInclude>
+    <ClInclude Include="criware\criware_xaudio2.h">
+      <Filter>criware</Filter>
+    </ClInclude>
+    <ClInclude Include="d3d8.h">
+      <Filter>d3d8_proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="daudio2\daudio.h">
+      <Filter>DirectAudio</Filter>
+    </ClInclude>
+    <ClInclude Include="daudio2\daudio_buffer.h">
+      <Filter>DirectAudio</Filter>
+    </ClInclude>
+    <ClInclude Include="d3d8_proxy.h">
+      <Filter>d3d8_proxy</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dxrinput\device_dinput.cpp">
@@ -120,7 +140,6 @@
       <Filter>xaudio2</Filter>
     </ClCompile>
     <ClCompile Include="d3d8.cpp" />
-    <ClCompile Include="d3d8_proxy.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="sh2test.cpp" />
     <ClCompile Include="util.cpp" />
@@ -160,6 +179,21 @@
     </ClCompile>
     <ClCompile Include="criware\criware_debug.cpp">
       <Filter>criware</Filter>
+    </ClCompile>
+    <ClCompile Include="criware\criware_xaudio2.cpp">
+      <Filter>criware</Filter>
+    </ClCompile>
+    <ClCompile Include="d3d8_proxy.cpp">
+      <Filter>d3d8_proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="daudio2\daudio.cpp">
+      <Filter>DirectAudio</Filter>
+    </ClCompile>
+    <ClCompile Include="daudio2\daudio_buffer.cpp">
+      <Filter>DirectAudio</Filter>
+    </ClCompile>
+    <ClCompile Include="daudio2\daudio_guid.cpp">
+      <Filter>DirectAudio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

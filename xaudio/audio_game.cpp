@@ -6,7 +6,7 @@
 #include "audio.h"
 
 // 518860
-void Sound_CreateBuffer(IXAudio2* pXA, int a3)
+void Sound_CreatePrimaryBuffer(IXAudio2* pXA, int a3)
 {
 
 }

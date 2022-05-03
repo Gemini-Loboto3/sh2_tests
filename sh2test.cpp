@@ -5,6 +5,7 @@
 #include "dxrinput/dinput8_proxy.h"
 #include "criware\criware.h"
 #include <chrono>
+#include "daudio2/daudio.h"
 
 // makes the exe freely writable on DLL-side of code
 void MakePageWritable(unsigned long ulAddress, unsigned long ulSize)
@@ -107,8 +108,11 @@ void Inject_tests()
 	auto cut = (CUTSCENE_DATA*)0x8DAEEC;
 	cut[1].timer1 = 181;
 
+#if XAUDIO2
+	INJECT_EXT(0x24A6720, DirectAudioCreate);
+	Inject_xaudio2();
+#endif
+
 	//INJECT_EXT(0x24A66F0, DirectInput8CreateProxy);
 	//INJECT(0x4010F0, WndProcedureEx);
-
-	//Inject_xaudio2();
 }

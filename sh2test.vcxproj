@@ -192,7 +192,11 @@
     <ClInclude Include="criware\criware_file.h" />
     <ClInclude Include="criware\criware_server.h" />
     <ClInclude Include="criware\criware_sound.h" />
+    <ClInclude Include="criware\criware_xaudio2.h" />
     <ClInclude Include="d3d8.h" />
+    <ClInclude Include="d3d8_proxy.h" />
+    <ClInclude Include="daudio2\daudio.h" />
+    <ClInclude Include="daudio2\daudio_buffer.h" />
     <ClInclude Include="dxrinput\dinput8_proxy.h" />
     <ClInclude Include="dxrinput\wrappers\rawinput.h" />
     <ClInclude Include="dxrinput\wrappers\xinput.h" />
@@ -221,8 +225,12 @@
     <ClCompile Include="criware\criware_main.cpp" />
     <ClCompile Include="criware\criware_server.cpp" />
     <ClCompile Include="criware\criware_sound.cpp" />
+    <ClCompile Include="criware\criware_xaudio2.cpp" />
     <ClCompile Include="d3d8.cpp" />
     <ClCompile Include="d3d8_proxy.cpp" />
+    <ClCompile Include="daudio2\daudio.cpp" />
+    <ClCompile Include="daudio2\daudio_buffer.cpp" />
+    <ClCompile Include="daudio2\daudio_guid.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="dxrinput\device_dinput.cpp" />
     <ClCompile Include="dxrinput\device_rawinput.cpp" />

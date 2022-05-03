@@ -54,18 +54,10 @@ HRESULT __stdcall Xaudio2_init(int, void **obj, int)
 // Xaudio2 injections
 void Inject_xaudio2()
 {
-	INJECT(0x55A3C6, Xaudio2_init);
-
-	memset((void*)0x514F6F, 0x90, 7);	// nop cooperative mode for dsound
-
-	//INJECT(0x56C650, mwPcInit);
-	*(DWORD*)0x56CA5F = (DWORD)&XAudioMW_vtbl;
-	INJECT(0x56D360, mwSndGetLibHn);
-
 	INJECT(0x517820, Sound_Create3dBuffer);
-	INJECT(0x518860, Sound_CreateBuffer);
+	//INJECT(0x518860, Sound_CreatePrimaryBuffer);
 
-	INJECT(0x43D5B0, BinkQuery);
+	//INJECT(0x43D5B0, BinkQuery);
 }
 
 // --------------------------------

@@ -8,6 +8,8 @@
 */
 #include "criware.h"
 
+#if !XAUDIO2
+
 LPDIRECTSOUND8 pDS8;
 
 #define BUFFER_SIZE		32768
@@ -24,6 +26,8 @@ void adxs_SetupDSound(LPDIRECTSOUND8 pDS)
 
 void SndObjDSound::CreateBuffer(CriFileStream* stream)
 {
+	ADX_lock();
+
 	str = stream;
 	
 	fmt.cbSize = sizeof(WAVEFORMATEX);
@@ -47,48 +51,8 @@ void SndObjDSound::CreateBuffer(CriFileStream* stream)
 	used = 1;
 	offset = 0;
 	offset_played = 0;
-}
 
-u_long SndObjDSound::GetPosition()
-{
-	DWORD pos;
-	pBuf->GetCurrentPosition(&pos, nullptr);
-
-	return pos;
-}
-
-u_long SndObjDSound::GetPlayedSamples()
-{
-	return (offset_played + GetPosition()) / fmt.nBlockAlign;
-}
-
-void SndObjDSound::SendData()
-{
-	u_long pos = GetPosition(),
-		add = 0;
-
-	if (pos - offset < 0)
-		add = BUFFER_SIZE;
-	if (pos + add - offset > BUFFER_HALF + 16)
-	{
-		Fill(BUFFER_QUART);
-
-		u_long total = offset + BUFFER_QUART;
-		offset = total;
-		if (BUFFER_SIZE <= total)
-			offset = total - BUFFER_SIZE;
-		offset_played += BUFFER_QUART;
-	}
-}
-
-void SndObjDSound::SetVolume(int vol)
-{
-	if (vol < -1000)
-		vol = -1000;
-
-	volume = vol;
-	if (used && pBuf)
-		pBuf->SetVolume(vol * 10);
+	ADX_unlock();
 }
 
 void SndObjDSound::Play()
@@ -139,34 +103,97 @@ int SndObjDSound::Stop()
 
 void SndObjDSound::Update()
 {
+	ADX_lock();
 	// inactive objects need to do nothing
-	if (used == 0) return;
-
-	if (pBuf && stopped == 0)
+	if (used)
 	{
-		// if this stream is not set to loop we need to stop streaming when it's done playing
-		if (loops == 0)
+		if (pBuf && stopped == 0)
 		{
-			// signal that decoding is done
-			if (adx->state != ADXT_STAT_DECEND && str->sample_index >= str->loop_end_index)
-				adx->state = ADXT_STAT_DECEND;
-			// signal that playback is done and stop filling the buffer
-			if (GetPlayedSamples() >= str->loop_end_index)
+			// if this stream is not set to loop we need to stop streaming when it's done playing
+			if (loops == 0)
 			{
-				Stop();
-				adx->state = ADXT_STAT_PLAYEND;
+				// signal that decoding is done
+				if (adx->state != ADXT_STAT_DECEND && str->sample_index >= str->loop_end_index)
+					adx->state = ADXT_STAT_DECEND;
+				// signal that playback is done and stop filling the buffer
+				if (GetPlayedSamples() >= str->loop_end_index)
+				{
+					Stop();
+					adx->state = ADXT_STAT_PLAYEND;
+				}
 			}
-		}
 
-		// check if the volume needs to be changed
-		if (adx && adx->set_volume)
-		{
-			SetVolume(adx->volume);
-			adx->set_volume = 0;
-		}
+			// check if the volume needs to be changed
+			if (adx && adx->set_volume)
+			{
+				SetVolume(adx->volume);
+				adx->set_volume = 0;
+			}
 
-		SendData();
+			SendData();
+		}
 	}
+	ADX_unlock();
+}
+
+void SndObjDSound::SendData()
+{
+	u_long pos = GetPosition(),
+		add = 0;
+
+	if (pos - offset < 0)
+		add = BUFFER_SIZE;
+	if (pos + add - offset > BUFFER_HALF + 16)
+	{
+		Fill(BUFFER_QUART);
+
+		u_long total = offset + BUFFER_QUART;
+		offset = total;
+		if (BUFFER_SIZE <= total)
+			offset = total - BUFFER_SIZE;
+		offset_played += BUFFER_QUART;
+	}
+}
+
+void SndObjDSound::SetVolume(int vol)
+{
+	if (vol < -1000)
+		vol = -1000;
+
+	volume = vol;
+	if (used && pBuf)
+		pBuf->SetVolume(vol * 10);
+}
+
+void SndObjDSound::Release()
+{
+	if (used && pBuf)
+	{
+		pBuf->Release();
+		pBuf = nullptr;
+
+		ptr1 = nullptr;
+		bytes1 = 0;
+		ptr2 = nullptr;
+		bytes2 = 0;
+
+		SndObjBase::Release();
+	}
+}
+
+// -----------------------------
+// non virtual methods
+u_long SndObjDSound::GetPosition()
+{
+	DWORD pos;
+	pBuf->GetCurrentPosition(&pos, nullptr);
+
+	return pos;
+}
+
+u_long SndObjDSound::GetPlayedSamples()
+{
+	return (offset_played + GetPosition()) / fmt.nBlockAlign;
 }
 
 int SndObjDSound::GetStatus()
@@ -225,18 +252,4 @@ void SndObjDSound::Fill(u_long size)
 	Unlock();
 }
 
-void SndObjDSound::Release()
-{
-	if (used && pBuf)
-	{
-		pBuf->Release();
-		pBuf = nullptr;
-
-		ptr1 = nullptr;
-		bytes1 = 0;
-		ptr2 = nullptr;
-		bytes2 = 0;
-
-		SndObjBase::Release();
-	}
-}
+#endif
