@@ -33,13 +33,15 @@ const char* ADXFIC_GetFileName(ADXFIC_Object* obj, u_long index)
 	return obj->files[index].filename.c_str();
 }
 
-// no need to fill these, it's just some leftovers from the XBOX library
+// no need to fill these, it's just some leftovers from the XBOX DVD library
 void ADXWIN_SetupDvdFs(void*) {}
 void ADXWIN_ShutdownDvdFs() {}
 
-// directsound setup
+// setup Windows sound
 void ADXWIN_SetupSound(void* pDS8)
 {
+	ADX_lock_init();
+
 #if !XAUDIO2
 	adxs_SetupDSound((LPDIRECTSOUND8)pDS8);
 #else
@@ -50,27 +52,21 @@ void ADXWIN_SetupSound(void* pDS8)
 #endif
 }
 
-// close directsound
+// close Windows sound
 void ADXWIN_ShutdownSound()
 {
 	adxs_Release();
-}
-
-// initialize the threads used by the ADX server
-void ADXM_SetupThrd(int* priority /* ignored */)
-{
-	UNREFERENCED_PARAMETER(priority);
-
-	ADX_lock_init();
-	server_create();
-}
-
-// destroy the ADX threads
-void ADXM_ShutdownThrd()
-{
-	server_destroy();
 	ADX_lock_close();
 }
+
+// initialize the threads used by the ADX server, leave empty
+void ADXM_SetupThrd(int* priority)
+{
+	UNREFERENCED_PARAMETER(priority);
+}
+
+// destroy the ADX threads, leave empty
+void ADXM_ShutdownThrd() {}
 
 // leave empty
 // this is called inside the performance thread, but it's useless

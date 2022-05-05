@@ -127,13 +127,17 @@ int afs_StartAfs(ADXT_Object* obj, int patid, int fid)
 		stream = adx;
 	}
 
+	ADXD_Log("Starting AFS %d\n", fid);
+
+	ADX_lock();
 	obj->stream = stream;
 	obj->obj = adxs_FindObj();
 	obj->obj->adx = obj;
 	obj->obj->loops = stream->loop_enabled;
-	obj->is_blocking = 1;
 
 	obj->obj->CreateBuffer(stream);
+	ADX_unlock();
+
 	obj->obj->Play();
 	obj->ThResume();
 

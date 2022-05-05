@@ -9,7 +9,7 @@
 #include "criware.h"
 #include <chrono>
 
-#define MEASURE_ACCESS		0
+#define MEASURE_ACCESS		1
 
 #if MEASURE_ACCESS
 static double TimeGetTime()
@@ -165,10 +165,11 @@ void adx_StartFname(ADXT_Object* obj, const char* fname)
 	ADXStream* stream;
 	OpenADX(fname, &stream);
 
+	ADX_lock();
 	obj->state = ADXT_STAT_PLAYING;
 	obj->stream = stream;
 	obj->obj = adxs_FindObj();
-	obj->obj->loops = true;
+	obj->obj->loops = stream->loop_enabled;
 	obj->obj->adx = obj;
 
 #if MEASURE_ACCESS
@@ -177,6 +178,8 @@ void adx_StartFname(ADXT_Object* obj, const char* fname)
 
 	obj->obj->CreateBuffer(stream);
 	obj->obj->Play();
+	ADX_unlock();
+
 	obj->ThResume();
 }
 
@@ -189,7 +192,6 @@ ADXT_Object::ADXT_Object() : work_size(0),
 	volume(0),
 	state(ADXT_STAT_STOP),
 	is_aix(0),
-	is_blocking(0),
 	set_volume(0),
 	th(CreateThread(nullptr, 0, thread, this, CREATE_SUSPENDED, nullptr)),
 	th_suspended(1),
@@ -238,15 +240,21 @@ void ADXT_Object::Reset()
 	{
 		ThSuspend();
 
-		obj->Stop();
-		obj->Release();
-		obj = nullptr;
+		ADX_lock();
+
+		if (obj)
+		{
+			adxs_Clear(obj);
+			obj = nullptr;
+		}
 		if (stream)
 		{
 			delete stream;
 			stream = nullptr;
 		}
 		state = ADXT_STAT_STOP;
+
+		ADX_unlock();
 	}
 }
 
@@ -254,6 +262,8 @@ void ADXT_Object::Thread()
 {
 	while (th_exit == 0)
 	{
+		ADX_sync();
+
 		switch (state)
 		{
 		case ADXT_STAT_PLAYING:
@@ -263,7 +273,7 @@ void ADXT_Object::Thread()
 			break;
 		}
 
-		Sleep(20);
+		Sleep(10);
 	}
 }
 

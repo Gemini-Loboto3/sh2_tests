@@ -87,6 +87,8 @@ void PatchCriware()
 	INJECT(0x55D970, AIXP_GetAdxt);
 	INJECT(0x55D9A0, AIXP_SetLpSw);
 	INJECT(0x55DCE0, AIXP_ExecServer);
+
+	ADXD_SetLevel(1);
 }
 
 void Inject_tests()

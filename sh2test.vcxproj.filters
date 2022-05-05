@@ -65,7 +65,7 @@
     <ClInclude Include="criware\criware_adxfic.h">
       <Filter>criware</Filter>
     </ClInclude>
-    <ClInclude Include="criware\criware_server.h">
+    <ClInclude Include="criware\criware_lock.h">
       <Filter>criware</Filter>
     </ClInclude>
     <ClInclude Include="criware\criware_adx.h">
@@ -156,7 +156,7 @@
       <Filter>criware</Filter>
     </ClCompile>
     <ClCompile Include="xxhash.c" />
-    <ClCompile Include="criware\criware_server.cpp">
+    <ClCompile Include="criware\criware_lock.cpp">
       <Filter>criware</Filter>
     </ClCompile>
     <ClCompile Include="criware\criware_afs.cpp">

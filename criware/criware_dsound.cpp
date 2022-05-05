@@ -16,6 +16,10 @@ LPDIRECTSOUND8 pDS8;
 #define BUFFER_HALF		(BUFFER_SIZE / 2)
 #define BUFFER_QUART	(BUFFER_HALF / 2)
 
+#ifdef _DEBUG
+static int buffer_cnt = 0;
+#endif
+
 void adxs_SetupDSound(LPDIRECTSOUND8 pDS)
 {
 	pDS8 = pDS;
@@ -26,8 +30,6 @@ void adxs_SetupDSound(LPDIRECTSOUND8 pDS)
 
 void SndObjDSound::CreateBuffer(CriFileStream* stream)
 {
-	ADX_lock();
-
 	str = stream;
 	
 	fmt.cbSize = sizeof(WAVEFORMATEX);
@@ -46,13 +48,15 @@ void SndObjDSound::CreateBuffer(CriFileStream* stream)
 	if (FAILED(pDS8->CreateSoundBuffer(&desc, &pBuf, nullptr)))
 		ADXD_Error(__FUNCTION__, "Can't create buffer.");
 
+#ifdef _DEBUG
+	ADXD_Log("Allocating, %d buffers so far\n", ++buffer_cnt);
+#endif
+
 	Fill(BUFFER_SIZE);
 
 	used = 1;
 	offset = 0;
 	offset_played = 0;
-
-	ADX_unlock();
 }
 
 void SndObjDSound::Play()
@@ -65,37 +69,28 @@ void SndObjDSound::Play()
 			adx->set_volume = 0;
 		}
 
-		if(pBuf)
+		if (pBuf)
+		{
 			pBuf->Play(0, 0, DSBPLAY_LOOPING);
+			stopped = 0;
+		}
 	}
 }
 
 int SndObjDSound::Stop()
 {
 	// this is inactive or stopped already
-	if (used == 0) return 1 ;
+	if (used == 0) return 1;
 	if (stopped == 1) return 1;
 
 	if (pBuf)
 	{
-		if (stopping == 0)
-		{
-			// queue stop to directsound
-			stopping = 1;
-			pBuf->Stop();
-		}
+		pBuf->Stop();
 
-		// check if directsound is done
-		int s = GetStatus();
-		if (s == DSOS_LOOPING || s == DSOS_PLAYING)
-		{
-			ADXD_Log(__FUNCTION__ ": still playing, can't release...\n");
-			return 0;	// still playing
-		}
-		
-		// ok, we're done!
+		DWORD st;
+		do { pBuf->GetStatus(&st); } while (st & DSBSTATUS_PLAYING);
+
 		stopped = 1;
-		return 1;
 	}
 
 	return 0;
@@ -103,10 +98,11 @@ int SndObjDSound::Stop()
 
 void SndObjDSound::Update()
 {
-	ADX_lock();
 	// inactive objects need to do nothing
 	if (used)
 	{
+		ADX_lock();
+
 		if (pBuf && stopped == 0)
 		{
 			// if this stream is not set to loop we need to stop streaming when it's done playing
@@ -120,6 +116,9 @@ void SndObjDSound::Update()
 				{
 					Stop();
 					adx->state = ADXT_STAT_PLAYEND;
+
+					ADX_unlock();
+					return;
 				}
 			}
 
@@ -132,8 +131,9 @@ void SndObjDSound::Update()
 
 			SendData();
 		}
+
+		ADX_unlock();
 	}
-	ADX_unlock();
 }
 
 void SndObjDSound::SendData()
@@ -167,10 +167,22 @@ void SndObjDSound::SetVolume(int vol)
 
 void SndObjDSound::Release()
 {
-	if (used && pBuf)
+	if (used)
 	{
-		pBuf->Release();
-		pBuf = nullptr;
+		//ADX_lock();
+
+		if (stopped == 0)
+			Stop();
+
+		if (pBuf)
+		{
+#ifdef _DEBUG
+			ADXD_Log("Dellocating, %d buffers so far\n", --buffer_cnt);
+#endif
+
+			pBuf->Release();
+			pBuf = nullptr;
+		}
 
 		ptr1 = nullptr;
 		bytes1 = 0;
@@ -178,6 +190,8 @@ void SndObjDSound::Release()
 		bytes2 = 0;
 
 		SndObjBase::Release();
+
+		//ADX_unlock();
 	}
 }
 
@@ -216,21 +230,50 @@ int SndObjDSound::GetStatus()
 
 void SndObjDSound::Lock(u_long size)
 {
-	if (FAILED(pBuf->Lock(offset, size, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0)))
-		ADXD_Error(__FUNCTION__, "Can't lock.");
+	auto hr = pBuf->Lock(offset, size, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
+
+	switch (hr)
+	{
+	case DSERR_BUFFERLOST:
+		ADXD_Error(__FUNCTION__, "Can't lock (DSERR_BUFFERLOST).");
+		break;
+	case DSERR_INVALIDCALL:
+		ADXD_Error(__FUNCTION__, "Can't lock (DSERR_INVALIDCALL).");
+		break;
+	case DSERR_INVALIDPARAM:
+		ADXD_Error(__FUNCTION__, "Can't lock (DSERR_INVALIDPARAM).");
+		break;
+	case DSERR_PRIOLEVELNEEDED:
+		ADXD_Error(__FUNCTION__, "Can't lock (DSERR_PRIOLEVELNEEDED).");
+		break;
+	}
 }
 
 void SndObjDSound::Unlock()
 {
-	if (FAILED(pBuf->Unlock(ptr1, bytes1, ptr2, bytes2)))
-		ADXD_Error(__FUNCTION__, "Can't unlock.");
+	auto hr = pBuf->Unlock(ptr1, bytes1, ptr2, bytes2);
+	switch (hr)
+	{
+	case DSERR_BUFFERLOST:
+		ADXD_Error(__FUNCTION__, "Can't unlock (DSERR_BUFFERLOST).");
+		break;
+	case DSERR_INVALIDCALL:
+		ADXD_Error(__FUNCTION__, "Can't unlock (DSERR_INVALIDCALL).");
+		break;
+	case DSERR_INVALIDPARAM:
+		ADXD_Error(__FUNCTION__, "Can't unlock (DSERR_INVALIDPARAM).");
+		break;
+	case DSERR_PRIOLEVELNEEDED:
+		ADXD_Error(__FUNCTION__, "Can't unlock (DSERR_PRIOLEVELNEEDED).");
+		break;
+	}
 }
 
 void SndObjDSound::Fill(u_long size)
 {
 	Lock(size);
 	// just fill with silence if we're stopping or the data was previously over
-	if (stopping || adx->state == ADXT_STAT_DECEND)
+	if (adx->state == ADXT_STAT_DECEND)
 	{
 		ADXD_Log(__FUNCTION__ ": sending silence...\n");
 		memset(ptr1, 0, bytes1);

@@ -30,14 +30,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugEXE|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -103,6 +103,7 @@
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>d3d8.def</ModuleDefinitionFile>
       <OutputFile>D:\Program Files\Silent Hill 2\$(TargetName)$(TargetExt)</OutputFile>
+      <UACUIAccess>true</UACUIAccess>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugEXE|Win32'">
@@ -190,7 +191,7 @@
     <ClInclude Include="criware\criware_debug.h" />
     <ClInclude Include="criware\criware_dsound.h" />
     <ClInclude Include="criware\criware_file.h" />
-    <ClInclude Include="criware\criware_server.h" />
+    <ClInclude Include="criware\criware_lock.h" />
     <ClInclude Include="criware\criware_sound.h" />
     <ClInclude Include="criware\criware_xaudio2.h" />
     <ClInclude Include="d3d8.h" />
@@ -223,7 +224,7 @@
     <ClCompile Include="criware\criware_dsound.cpp" />
     <ClCompile Include="criware\criware_file.cpp" />
     <ClCompile Include="criware\criware_main.cpp" />
-    <ClCompile Include="criware\criware_server.cpp" />
+    <ClCompile Include="criware\criware_lock.cpp" />
     <ClCompile Include="criware\criware_sound.cpp" />
     <ClCompile Include="criware\criware_xaudio2.cpp" />
     <ClCompile Include="d3d8.cpp" />

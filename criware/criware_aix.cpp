@@ -9,7 +9,7 @@
 #include "criware.h"
 #include <chrono>
 
-#define MEASURE_ACCESS		0
+#define MEASURE_ACCESS		1
 
 #if MEASURE_ACCESS
 static double TimeGetTime()
@@ -88,6 +88,8 @@ static DWORD WINAPI aix_load_thread(LPVOID param)
 	obj->demuxer = aix;
 	obj->stream_no = aix->stream_count;
 
+	ADX_lock();
+
 	// create the necessary buffers
 	for (int i = 0; i < obj->stream_no; i++)
 	{
@@ -111,8 +113,10 @@ static DWORD WINAPI aix_load_thread(LPVOID param)
 		obj->adxt[i].ThResume();
 	}
 
+	ADX_unlock();
+
 #if MEASURE_ACCESS
-	ADXD_Log(__FUNCTION__ ": AIX done parsing in %f ms.\n", TimeGetTime() - start);
+	ADXD_Log(__FUNCTION__ ": AIX done parsing in %f ms, %d streams.\n", TimeGetTime() - start, obj->stream_no);
 #endif
 
 	obj->th = 0;
@@ -147,8 +151,6 @@ void AIXP_Object::Release()
 		// now we can release everything
 		for (int i = 0; i < stream_no; i++)
 			adxt[i].Reset();
-
-		//memset(adxt, 0, sizeof(adxt));
 
 		if (demuxer)
 		{

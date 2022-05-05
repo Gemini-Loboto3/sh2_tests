@@ -44,16 +44,17 @@ void ADXD_Warning(const char* caption, const char* fmt, ...)
 
 void ADXD_Log(const char* fmt, ...)
 {
-#if _DEBUG
-	va_list ap;
-	char buf[256];
+	if (dlevel)
+	{
+		va_list ap;
+		char buf[256];
 
-	va_start(ap, fmt);
-	vsprintf_s(buf, fmt, ap);
-	va_end(ap);
+		va_start(ap, fmt);
+		vsprintf_s(buf, fmt, ap);
+		va_end(ap);
 
-	OutputDebugStringA(buf);
-#endif
+		OutputDebugStringA(buf);
+	}
 }
 
 void ADXD_SetLevel(int level)
