@@ -12,7 +12,7 @@
 
 LPDIRECTSOUND8 pDS8;
 
-#define BUFFER_SIZE		32768
+#define BUFFER_SIZE		(32 * 1024)
 #define BUFFER_HALF		(BUFFER_SIZE / 2)
 #define BUFFER_QUART	(BUFFER_HALF / 2)
 
@@ -28,10 +28,34 @@ void adxs_SetupDSound(LPDIRECTSOUND8 pDS)
 		sound_obj_tbl[i] = new SndObjDSound();
 }
 
+static const char* get_ds_error(HRESULT err)
+{
+	switch (err)
+	{
+	case DSERR_ALLOCATED: return "DSERR_ALLOCATED";
+	case DSERR_CONTROLUNAVAIL: return "DSERR_CONTROLUNAVAIL";
+	case DSERR_BADFORMAT: return "DSERR_BADFORMAT";
+	case DSERR_INVALIDPARAM: return "DSERR_INVALIDPARAM";
+	case DSERR_NOAGGREGATION: return "DSERR_NOAGGREGATION";
+	case DSERR_OUTOFMEMORY: return "DSERR_OUTOFMEMORY";
+	case DSERR_UNINITIALIZED: return "DSERR_UNINITIALIZED";
+	case DSERR_UNSUPPORTED: return "DSERR_UNSUPPORTED";
+	case DSERR_BUFFERLOST: return "DSERR_BUFFERLOST";
+	case DSERR_INVALIDCALL: return "DSERR_INVALIDCALL";
+	case DSERR_PRIOLEVELNEEDED: return "DSERR_PRIOLEVELNEEDED";
+	}
+
+	return "DSERR_UNKNOWN";
+}
+
+#define DS_CALL_CATCH(x, caption, error)		{ HRESULT hr = (x); \
+	if(FAILED(hr)) ADXD_Error(caption, error, get_ds_error(hr)); \
+	} \
+
 void SndObjDSound::CreateBuffer(CriFileStream* stream)
 {
 	str = stream;
-	
+
 	fmt.cbSize = sizeof(WAVEFORMATEX);
 	fmt.nSamplesPerSec = stream->sample_rate;
 	fmt.nBlockAlign = (WORD)(2 * stream->channel_count);
@@ -45,8 +69,7 @@ void SndObjDSound::CreateBuffer(CriFileStream* stream)
 	desc.lpwfxFormat = &fmt;
 	desc.dwFlags = DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_GLOBALFOCUS | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLFREQUENCY | DSBCAPS_LOCSOFTWARE;
 	desc.dwBufferBytes = BUFFER_SIZE;
-	if (FAILED(pDS8->CreateSoundBuffer(&desc, &pBuf, nullptr)))
-		ADXD_Error(__FUNCTION__, "Can't create buffer.");
+	DS_CALL_CATCH((pDS8->CreateSoundBuffer(&desc, &pBuf, nullptr)), __FUNCTION__, "Couldn't create DirectSound buffer (%s).");
 
 #ifdef _DEBUG
 	ADXD_Log("Allocating, %d buffers so far\n", ++buffer_cnt);
@@ -169,8 +192,6 @@ void SndObjDSound::Release()
 {
 	if (used)
 	{
-		//ADX_lock();
-
 		if (stopped == 0)
 			Stop();
 
@@ -190,8 +211,6 @@ void SndObjDSound::Release()
 		bytes2 = 0;
 
 		SndObjBase::Release();
-
-		//ADX_unlock();
 	}
 }
 
@@ -230,43 +249,12 @@ int SndObjDSound::GetStatus()
 
 void SndObjDSound::Lock(u_long size)
 {
-	auto hr = pBuf->Lock(offset, size, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0);
-
-	switch (hr)
-	{
-	case DSERR_BUFFERLOST:
-		ADXD_Error(__FUNCTION__, "Can't lock (DSERR_BUFFERLOST).");
-		break;
-	case DSERR_INVALIDCALL:
-		ADXD_Error(__FUNCTION__, "Can't lock (DSERR_INVALIDCALL).");
-		break;
-	case DSERR_INVALIDPARAM:
-		ADXD_Error(__FUNCTION__, "Can't lock (DSERR_INVALIDPARAM).");
-		break;
-	case DSERR_PRIOLEVELNEEDED:
-		ADXD_Error(__FUNCTION__, "Can't lock (DSERR_PRIOLEVELNEEDED).");
-		break;
-	}
+	DS_CALL_CATCH((pBuf->Lock(offset, size, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0)), __FUNCTION__, "Couldn't lock DirectSound buffer (%s)");
 }
 
 void SndObjDSound::Unlock()
 {
-	auto hr = pBuf->Unlock(ptr1, bytes1, ptr2, bytes2);
-	switch (hr)
-	{
-	case DSERR_BUFFERLOST:
-		ADXD_Error(__FUNCTION__, "Can't unlock (DSERR_BUFFERLOST).");
-		break;
-	case DSERR_INVALIDCALL:
-		ADXD_Error(__FUNCTION__, "Can't unlock (DSERR_INVALIDCALL).");
-		break;
-	case DSERR_INVALIDPARAM:
-		ADXD_Error(__FUNCTION__, "Can't unlock (DSERR_INVALIDPARAM).");
-		break;
-	case DSERR_PRIOLEVELNEEDED:
-		ADXD_Error(__FUNCTION__, "Can't unlock (DSERR_PRIOLEVELNEEDED).");
-		break;
-	}
+	DS_CALL_CATCH((pBuf->Unlock(ptr1, bytes1, ptr2, bytes2)), __FUNCTION__, "Couldn't unlock DirectSound buffer (%s)");
 }
 
 void SndObjDSound::Fill(u_long size)

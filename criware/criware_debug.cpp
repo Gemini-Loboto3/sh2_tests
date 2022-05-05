@@ -19,10 +19,10 @@ void ADXD_Error(const char* caption, const char* fmt, ...)
 		char buf[256];
 
 		va_start(ap, fmt);
-		vsprintf_s(buf, fmt, ap);
+		vsprintf_s(buf, sizeof(buf), fmt, ap);
 		va_end(ap);
 
-		MessageBoxA(nullptr, buf, caption, MB_ICONERROR);
+		MessageBoxA(nullptr, buf, caption, MB_ICONERROR | MB_DEFAULT_DESKTOP_ONLY);
 		exit(0);
 	}
 }
@@ -35,10 +35,10 @@ void ADXD_Warning(const char* caption, const char* fmt, ...)
 		char buf[256];
 
 		va_start(ap, fmt);
-		vsprintf_s(buf, fmt, ap);
+		vsprintf_s(buf, sizeof(buf), fmt, ap);
 		va_end(ap);
 
-		MessageBoxA(nullptr, buf, caption, MB_ICONEXCLAMATION);
+		MessageBoxA(nullptr, buf, caption, MB_ICONEXCLAMATION | MB_DEFAULT_DESKTOP_ONLY);
 	}
 }
 

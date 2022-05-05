@@ -97,6 +97,10 @@ int afs_StartAfs(ADXT_Object* obj, int patid, int fid)
 	DWORD magic;
 	ADXF_ReadFile(afs.fp, &magic, sizeof(magic));
 
+#ifdef _DEBUG
+	ADXD_Log("Starting AFS %d\n", fid);
+#endif
+
 	// special case for AFS, detect RIFF wave
 	if (magic == 'RIFF' || magic == 'FFIR')
 	{
@@ -127,21 +131,18 @@ int afs_StartAfs(ADXT_Object* obj, int patid, int fid)
 		stream = adx;
 	}
 
-	ADXD_Log("Starting AFS %d\n", fid);
-
 	ADX_lock();
+	obj->state = ADXT_STAT_PLAYING;
 	obj->stream = stream;
 	obj->obj = adxs_FindObj();
 	obj->obj->adx = obj;
 	obj->obj->loops = stream->loop_enabled;
 
 	obj->obj->CreateBuffer(stream);
+	obj->obj->Play();
 	ADX_unlock();
 
-	obj->obj->Play();
 	obj->ThResume();
-
-	obj->state = ADXT_STAT_PLAYING;
 
 	return 1;
 }

@@ -22,7 +22,6 @@ void ADX_lock_close()
 
 void ADX_lock()
 {
-	//EnterCriticalSection(&ADX_crit);
 	while (!TryEnterCriticalSection(&ADX_crit));
 }
 

@@ -262,8 +262,6 @@ void ADXT_Object::Thread()
 {
 	while (th_exit == 0)
 	{
-		ADX_sync();
-
 		switch (state)
 		{
 		case ADXT_STAT_PLAYING:
@@ -273,7 +271,7 @@ void ADXT_Object::Thread()
 			break;
 		}
 
-		Sleep(10);
+		Sleep(5);
 	}
 }
 
