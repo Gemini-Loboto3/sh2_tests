@@ -303,8 +303,8 @@ void AIX_Demuxer::Open(HANDLE _fp, u_long _stream_count, u_long total_size)
 #endif
 
 #if AIX_SEGMENTED
-	// request the necessary amount of data for headers and one block of samples
-	RequestData(2);
+	// request the necessary amount of data for headers and a bunch of blocks of samples
+	RequestData(10);
 #else
 	AIX_CHUNK chunk;
 	AIXP_HEADER aixp;
