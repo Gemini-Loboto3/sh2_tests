@@ -88,8 +88,6 @@ static DWORD WINAPI aix_load_thread(LPVOID param)
 	obj->demuxer = aix;
 	obj->stream_no = aix->stream_count;
 
-	ADX_lock();
-
 	// create the necessary buffers
 	for (int i = 0; i < obj->stream_no; i++)
 	{
@@ -112,8 +110,6 @@ static DWORD WINAPI aix_load_thread(LPVOID param)
 		obj->adxt[i].obj->Play();
 		obj->adxt[i].ThResume();
 	}
-
-	ADX_unlock();
 
 #if MEASURE_ACCESS
 	ADXD_Log(__FUNCTION__ ": AIX done parsing in %f ms, %d streams.\n", TimeGetTime() - start, obj->stream_no);

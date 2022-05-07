@@ -147,9 +147,7 @@ void SndObjXAudio::Update()
 
 		WaitForSingleObject(cb.hEndEvent, INFINITE);	// stay locked until the callback requires more data
 
-		ADX_lock();
 		SendData();
-		ADX_unlock();
 	}
 }
 

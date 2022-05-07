@@ -124,7 +124,6 @@ void SndObjDSound::Update()
 	// inactive objects need to do nothing
 	if (used)
 	{
-		ADX_lock();
 
 		if (pBuf && stopped == 0)
 		{
@@ -139,8 +138,6 @@ void SndObjDSound::Update()
 				{
 					Stop();
 					adx->state = ADXT_STAT_PLAYEND;
-
-					ADX_unlock();
 					return;
 				}
 			}
@@ -154,8 +151,6 @@ void SndObjDSound::Update()
 
 			SendData();
 		}
-
-		ADX_unlock();
 	}
 }
 
@@ -168,7 +163,9 @@ void SndObjDSound::SendData()
 		add = BUFFER_SIZE;
 	if (pos + add - offset > BUFFER_HALF + 16)
 	{
+		if (adx->is_aix) ADX_lock();
 		Fill(BUFFER_QUART);
+		if (adx->is_aix) ADX_unlock();
 
 		u_long total = offset + BUFFER_QUART;
 		offset = total;
