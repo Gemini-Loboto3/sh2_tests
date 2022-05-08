@@ -233,6 +233,7 @@ public:
 	void Open(HANDLE fp, u_long stream_count, u_long total_size);
 	void Close();
 	void Read(void* buffer, size_t size);
+	void Skip(size_t size);
 
 #if STR_AIX_CACHING
 	void InitCache();

@@ -88,6 +88,7 @@ static DWORD WINAPI aix_load_thread(LPVOID param)
 	obj->demuxer = aix;
 	obj->stream_no = aix->stream_count;
 
+	ADX_lock();
 	// create the necessary buffers
 	for (int i = 0; i < obj->stream_no; i++)
 	{
@@ -102,14 +103,17 @@ static DWORD WINAPI aix_load_thread(LPVOID param)
 	for (int i = obj->stream_no; i < _countof(obj->adxt); i++)
 		obj->adxt[i].state = ADXT_STAT_STOP;
 
-	obj->state = AIXP_STAT_PLAYING;
+	for (int i = 0; i < obj->stream_no; i++)
+		obj->adxt[i].ThResume();
+	ADX_unlock();
+
 	// kick all playback for all streams at once
 	for (int i = 0; i < obj->stream_no; i++)
 	{
 		obj->adxt[i].state = ADXT_STAT_PLAYING;
 		obj->adxt[i].obj->Play();
-		obj->adxt[i].ThResume();
 	}
+	obj->state = AIXP_STAT_PLAYING;
 
 #if MEASURE_ACCESS
 	ADXD_Log(__FUNCTION__ ": AIX done parsing in %f ms, %d streams.\n", TimeGetTime() - start, obj->stream_no);
@@ -130,17 +134,67 @@ void aix_start(AIXP_Object* obj, const char* fname)
 		obj->adxt[i].is_aix = 1;
 	}
 
+#if 0	// threaded loading
 	// just in case two AIX try to boot on the same object
 	if (obj->th)
 		WaitForSingleObject(obj->th, INFINITE);
 
 	obj->th = CreateThread(nullptr, 0, aix_load_thread, obj, 0, nullptr);
+#else
+
+#if MEASURE_ACCESS
+	double start = TimeGetTime();
+	ADXD_Log(__FUNCTION__ ": preparing AIX %s...\n", obj->fname);
+#endif
+
+	AIX_Demuxer* aix;
+	if (OpenAIX(obj->fname, &aix) == 0)
+	{
+		obj->state = AIXP_STAT_ERROR;
+		for (int i = 0; i < _countof(obj->adxt); i++)
+			obj->adxt[i].state = ADXT_STAT_ERROR;
+		return;
+	}
+	obj->demuxer = aix;
+	obj->stream_no = aix->stream_count;
+
+	// create the necessary buffers
+	ADX_lock();
+	for (int i = 0; i < obj->stream_no; i++)
+	{
+		obj->adxt[i].state = ADXT_STAT_PREP;
+		obj->adxt[i].stream = aix->stream[i];
+		obj->adxt[i].obj = adxs_FindObj();
+		obj->adxt[i].obj->loops = true;
+		obj->adxt[i].obj->adx = &obj->adxt[i];
+		obj->adxt[i].obj->CreateBuffer(obj->adxt[i].stream);
+	}
+	// flag any unused adxt as stopped
+	for (int i = obj->stream_no; i < _countof(obj->adxt); i++)
+		obj->adxt[i].state = ADXT_STAT_STOP;
+	ADX_unlock();
+
+	for (int i = 0; i < obj->stream_no; i++)
+	{
+		obj->adxt[i].state = ADXT_STAT_PLAYING;
+		obj->adxt[i].obj->Play();
+		obj->adxt[i].ThResume();
+	}
+
+	obj->state = AIXP_STAT_PLAYING;
+
+#if MEASURE_ACCESS
+	ADXD_Log(__FUNCTION__ ": AIX done parsing in %f ms, %d streams.\n", TimeGetTime() - start, obj->stream_no);
+#endif
+
+#endif
 }
 
 void AIXP_Object::Release()
 {
 	if (state != AIXP_STAT_STOP)
 	{
+#if 0
 		// ensure all stream threads are dead
 		for (int i = 0; i < stream_no; i++)
 			adxt[i].ThKill();
@@ -152,6 +206,19 @@ void AIXP_Object::Release()
 		{
 			delete demuxer;
 			demuxer = nullptr;
+		}
+#else
+		for(int i = 0; i < stream_no; i++)
+			ADXT_Stop(&adxt[i]);
+#endif
+
+		for (int i = 0; i < stream_no; i++)
+		{
+			if (adxt[i].stream)
+			{
+				delete adxt[i].stream;
+				adxt[i].stream = nullptr;
+			}
 		}
 
 		state = AIXP_STAT_STOP;

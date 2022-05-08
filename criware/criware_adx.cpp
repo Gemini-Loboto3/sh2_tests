@@ -165,6 +165,7 @@ void adx_StartFname(ADXT_Object* obj, const char* fname)
 	ADXStream* stream;
 	OpenADX(fname, &stream);
 
+	ADX_lock();
 	obj->state = ADXT_STAT_PLAYING;
 	obj->stream = stream;
 	obj->obj = adxs_FindObj();
@@ -172,9 +173,10 @@ void adx_StartFname(ADXT_Object* obj, const char* fname)
 	obj->obj->adx = obj;
 
 	obj->obj->CreateBuffer(stream);
-	obj->obj->Play();
-
 	obj->ThResume();
+	ADX_unlock();
+
+	obj->obj->Play();	
 
 #if MEASURE_ACCESS
 	ADXD_Log(__FUNCTION__ ": ADX done parsing in %f ms.\n", TimeGetTime() - start);
@@ -236,19 +238,21 @@ void ADXT_Object::Reset()
 {
 	if (state != ADXT_STAT_STOP)
 	{
+		state = ADXT_STAT_STOP;
 		ThSuspend();
 
+		ADX_lock();
 		if (obj)
 		{
 			adxs_Clear(obj);
 			obj = nullptr;
 		}
-		if (stream)
+		if (stream && is_aix == 0)
 		{
 			delete stream;
 			stream = nullptr;
 		}
-		state = ADXT_STAT_STOP;
+		ADX_unlock();
 	}
 }
 

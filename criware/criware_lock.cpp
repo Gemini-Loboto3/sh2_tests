@@ -34,7 +34,7 @@ void ADX_lock()
 	{
 		// deadlock prevention
 		double cur = GetTime() - start;
-		if (cur > 4000.)	// 4 second threshold to acquire the critical section
+		if (cur > 3000.)	// 3 second threshold to acquire the critical section
 		{
 			ADXD_Log("Preventing deadlock %3f ms\n", cur);
 			break;

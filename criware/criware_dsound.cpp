@@ -124,6 +124,8 @@ void SndObjDSound::Update()
 	// inactive objects need to do nothing
 	if (used)
 	{
+		//if(adx->is_aix)
+			ADX_lock();
 
 		if (pBuf && stopped == 0)
 		{
@@ -138,6 +140,9 @@ void SndObjDSound::Update()
 				{
 					Stop();
 					adx->state = ADXT_STAT_PLAYEND;
+
+					//if (adx->is_aix)
+						ADX_unlock();
 					return;
 				}
 			}
@@ -151,6 +156,9 @@ void SndObjDSound::Update()
 
 			SendData();
 		}
+
+		//if (adx->is_aix)
+			ADX_unlock();
 	}
 }
 
@@ -163,9 +171,7 @@ void SndObjDSound::SendData()
 		add = BUFFER_SIZE;
 	if (pos + add - offset > BUFFER_HALF + 16)
 	{
-		if (adx->is_aix) ADX_lock();
 		Fill(BUFFER_QUART);
-		if (adx->is_aix) ADX_unlock();
 
 		u_long total = offset + BUFFER_QUART;
 		offset = total;
@@ -201,11 +207,6 @@ void SndObjDSound::Release()
 			pBuf->Release();
 			pBuf = nullptr;
 		}
-
-		ptr1 = nullptr;
-		bytes1 = 0;
-		ptr2 = nullptr;
-		bytes2 = 0;
 
 		SndObjBase::Release();
 	}
@@ -244,19 +245,13 @@ int SndObjDSound::GetStatus()
 	return DSOS_ENDED;
 }
 
-void SndObjDSound::Lock(u_long size)
-{
-	DS_CALL_CATCH((pBuf->Lock(offset, size, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0)), __FUNCTION__, "Couldn't lock DirectSound buffer (%s)");
-}
-
-void SndObjDSound::Unlock()
-{
-	DS_CALL_CATCH((pBuf->Unlock(ptr1, bytes1, ptr2, bytes2)), __FUNCTION__, "Couldn't unlock DirectSound buffer (%s)");
-}
-
 void SndObjDSound::Fill(u_long size)
 {
-	Lock(size);
+	short *ptr1, *ptr2;
+	DWORD bytes1, bytes2;
+
+	DS_CALL_CATCH((pBuf->Lock(offset, size, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0)), __FUNCTION__, "Couldn't lock DirectSound buffer (%s)");
+
 	// just fill with silence if we're stopping or the data was previously over
 	if (adx->state == ADXT_STAT_DECEND)
 	{
@@ -277,7 +272,8 @@ void SndObjDSound::Fill(u_long size)
 			}
 		}
 	}
-	Unlock();
+
+	DS_CALL_CATCH((pBuf->Unlock(ptr1, bytes1, ptr2, bytes2)), __FUNCTION__, "Couldn't unlock DirectSound buffer (%s)");
 }
 
 #endif

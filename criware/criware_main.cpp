@@ -178,14 +178,23 @@ AIXP_Object* AIXP_Create(int maxntr, int maxnch, void* work, int worksize)
 {
 	UNREFERENCED_PARAMETER(maxntr);
 
-	AIXP_Object* obj = new AIXP_Object;
+	AIXP_WORK* w = (AIXP_WORK*)work;
 
-	for (int i = 0; i < _countof(obj->adxt); i++)
+	// make sure we initialize the AIXP object only once
+	if (w->magic != 'AIXP')
 	{
-		obj->adxt[i].maxch = (u_short)maxnch;
-		obj->adxt[i].work_size = worksize;
-		obj->adxt[i].work = work;
+		w->magic = 'AIXP';
+		w->obj = new AIXP_Object;
+
+		for (int i = 0; i < _countof(w->obj->adxt); i++)
+		{
+			w->obj->adxt[i].maxch = (u_short)maxnch;
+			w->obj->adxt[i].work_size = worksize;
+			w->obj->adxt[i].work = work;
+		}
 	}
+
+	auto obj = w->obj;
 
 	return obj;
 }
@@ -196,7 +205,7 @@ void AIXP_Destroy(AIXP_Object* obj)
 	if (obj)
 	{
 		AIXP_Stop(obj);
-		delete obj;
+	//	delete obj;
 	}
 }
 
@@ -224,6 +233,9 @@ void AIXP_StartFname(AIXP_Object* obj, const char* fname, void* atr)
 
 	if (obj == nullptr)
 		return;
+
+	if (obj->state != AIXP_STAT_STOP)
+		AIXP_Stop(obj);
 
 	aix_start(obj, fname);
 }

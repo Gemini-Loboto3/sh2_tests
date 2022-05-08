@@ -385,6 +385,13 @@ void AIX_Demuxer::Read(void* buffer, size_t size)
 #endif
 }
 
+void AIX_Demuxer::Skip(size_t size)
+{
+	DWORD read;
+	for (size_t i = 0; i < size; i += 4)
+		Read(&read, 4);
+}
+
 void AIX_Demuxer::RequestData(u_long count)
 {
 #if AIX_SEGMENTED
@@ -401,8 +408,13 @@ void AIX_Demuxer::RequestData(u_long count)
 		case 'P':
 			Read(&aixp, sizeof(aixp));
 			s = stream[aixp.stream_id];
-			Read(&s->data[s->cached], chunk.next.dw() - sizeof(aixp));
-			s->cached += chunk.next.dw() - sizeof(aixp);
+			if (s)
+			{
+				Read(&s->data[s->cached], chunk.next.dw() - sizeof(aixp));
+				s->cached += chunk.next.dw() - sizeof(aixp);
+			}
+			else
+				Skip(chunk.next.dw() - sizeof(aixp));
 			break;
 		case 'E':	// end parsing
 			return;

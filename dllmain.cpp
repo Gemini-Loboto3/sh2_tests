@@ -96,7 +96,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	ADXM_SetupThrd();
 
 #if TEST_AIX
-	AIXP_Object* aix = AIXP_Create(0, 0, nullptr, 0);
+	DWORD work[2];
+	AIXP_Object* aix = AIXP_Create(8, 2, work, sizeof(work));
 	AIXP_StartFname(aix, "data\\sound\\adx\\hotel\\bgm_113.aix", nullptr);
 #elif TEST_ADX
 	ADXT_Object* adx = ADXT_Create(0, nullptr, 0);
