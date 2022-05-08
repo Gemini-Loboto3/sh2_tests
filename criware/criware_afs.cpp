@@ -131,7 +131,7 @@ int afs_StartAfs(ADXT_Object* obj, int patid, int fid)
 		stream = adx;
 	}
 
-	ADX_lock();
+	//ADX_lock();
 	obj->state = ADXT_STAT_PLAYING;
 	obj->stream = stream;
 	obj->obj = adxs_FindObj();
@@ -140,7 +140,7 @@ int afs_StartAfs(ADXT_Object* obj, int patid, int fid)
 
 	obj->obj->CreateBuffer(stream);
 	obj->ThResume();
-	ADX_unlock();
+	//ADX_unlock();
 
 	obj->obj->Play();
 

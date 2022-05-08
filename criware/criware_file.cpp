@@ -440,7 +440,11 @@ void AIXStream::Read(void* buffer, size_t size)
 #else
 	// we're reading ahead of what's cached from AIX
 	if (pos + size > cached)
-		parent->RequestData(1);	// 1 whole read should be safe
+	{
+		Lock();
+		parent->RequestData(1);	// read until filled enough
+		Unlock();
+	}
 	// still inside cache, just copy over
 	memcpy(buffer, &data[pos], size);
 	pos += size;
@@ -454,8 +458,23 @@ void AIXStream::Seek(u_long _pos, u_long mode)
 #if !AIX_SEGMENTED
 	pos = _pos;
 #else
-	while(_pos > cached)
-		parent->RequestData(1);	// request until we're good
+	if (_pos > cached)
+	{
+		Lock();
+		while (_pos > cached)
+			parent->RequestData(1);	// request until we're good
+		Unlock();
+	}
 	pos = _pos;
 #endif
+}
+
+void AIXStream::Lock()
+{
+	EnterCriticalSection(&parent->crit);
+}
+
+void AIXStream::Unlock()
+{
+	LeaveCriticalSection(&parent->crit);
 }

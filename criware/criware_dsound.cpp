@@ -80,6 +80,7 @@ void SndObjDSound::CreateBuffer(CriFileStream* stream)
 	used = 1;
 	offset = 0;
 	offset_played = 0;
+	stopped = 1;
 }
 
 void SndObjDSound::Play()
@@ -124,9 +125,6 @@ void SndObjDSound::Update()
 	// inactive objects need to do nothing
 	if (used)
 	{
-		//if(adx->is_aix)
-			ADX_lock();
-
 		if (pBuf && stopped == 0)
 		{
 			// if this stream is not set to loop we need to stop streaming when it's done playing
@@ -140,9 +138,6 @@ void SndObjDSound::Update()
 				{
 					Stop();
 					adx->state = ADXT_STAT_PLAYEND;
-
-					//if (adx->is_aix)
-						ADX_unlock();
 					return;
 				}
 			}
@@ -156,9 +151,6 @@ void SndObjDSound::Update()
 
 			SendData();
 		}
-
-		//if (adx->is_aix)
-			ADX_unlock();
 	}
 }
 

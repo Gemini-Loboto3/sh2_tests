@@ -18,7 +18,7 @@ static double TimeGetTime()
 }
 #endif
 
-int OpenAIX(const char* filename, AIX_Demuxer**obj)
+int OpenAIX(const char* filename, AIX_Demuxer** obj)
 {
 	*obj = nullptr;
 
@@ -88,7 +88,7 @@ static DWORD WINAPI aix_load_thread(LPVOID param)
 	obj->demuxer = aix;
 	obj->stream_no = aix->stream_count;
 
-	ADX_lock();
+	//ADX_lock();
 	// create the necessary buffers
 	for (int i = 0; i < obj->stream_no; i++)
 	{
@@ -105,7 +105,7 @@ static DWORD WINAPI aix_load_thread(LPVOID param)
 
 	for (int i = 0; i < obj->stream_no; i++)
 		obj->adxt[i].ThResume();
-	ADX_unlock();
+	//ADX_unlock();
 
 	// kick all playback for all streams at once
 	for (int i = 0; i < obj->stream_no; i++)
@@ -159,7 +159,7 @@ void aix_start(AIXP_Object* obj, const char* fname)
 	obj->stream_no = aix->stream_count;
 
 	// create the necessary buffers
-	ADX_lock();
+	//ADX_lock();
 	for (int i = 0; i < obj->stream_no; i++)
 	{
 		obj->adxt[i].state = ADXT_STAT_PREP;
@@ -172,7 +172,7 @@ void aix_start(AIXP_Object* obj, const char* fname)
 	// flag any unused adxt as stopped
 	for (int i = obj->stream_no; i < _countof(obj->adxt); i++)
 		obj->adxt[i].state = ADXT_STAT_STOP;
-	ADX_unlock();
+	//ADX_unlock();
 
 	for (int i = 0; i < obj->stream_no; i++)
 	{
@@ -219,6 +219,8 @@ void AIXP_Object::Release()
 				delete adxt[i].stream;
 				adxt[i].stream = nullptr;
 			}
+			delete demuxer;
+			demuxer = nullptr;
 		}
 
 		state = AIXP_STAT_STOP;

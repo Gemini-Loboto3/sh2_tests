@@ -28,6 +28,7 @@ void ADX_lock_close()
 
 void ADX_lock()
 {
+#if 0
 	double start = GetTime();
 
 	while (!TryEnterCriticalSection(&ADX_crit))
@@ -40,6 +41,9 @@ void ADX_lock()
 			break;
 		}
 	}
+#else
+	EnterCriticalSection(&ADX_crit);
+#endif
 }
 
 void ADX_unlock()

@@ -239,11 +239,13 @@ void ADXT_Object::Reset()
 	if (state != ADXT_STAT_STOP)
 	{
 		state = ADXT_STAT_STOP;
+		SwitchToThread();	// make sure the thread is in a safe state
 		ThSuspend();
 
-		ADX_lock();
 		if (obj)
 		{
+			//while (obj->stopped == 0);
+
 			adxs_Clear(obj);
 			obj = nullptr;
 		}
@@ -252,7 +254,6 @@ void ADXT_Object::Reset()
 			delete stream;
 			stream = nullptr;
 		}
-		ADX_unlock();
 	}
 }
 
