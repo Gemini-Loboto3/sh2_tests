@@ -171,10 +171,10 @@ void adx_StartFname(ADXT_Object* obj, const char* fname)
 	obj->obj = adxs_FindObj();
 	obj->obj->loops = stream->loop_enabled;
 	obj->obj->adx = obj;
+	ADX_unlock();
 
 	obj->obj->CreateBuffer(stream);
 	obj->ThResume();
-	ADX_unlock();
 
 	obj->obj->Play();	
 
@@ -195,7 +195,8 @@ ADXT_Object::ADXT_Object() : work_size(0),
 	set_volume(0),
 	th(CreateThread(nullptr, 0, thread, this, CREATE_SUSPENDED, nullptr)),
 	th_suspended(1),
-	th_exit(0)
+	th_exit(0),
+	th_wait(0)
 {
 }
 
@@ -239,13 +240,15 @@ void ADXT_Object::Reset()
 	if (state != ADXT_STAT_STOP)
 	{
 		state = ADXT_STAT_STOP;
+#if 1
+		while (th_wait);
+#else
 		SwitchToThread();	// make sure the thread is in a safe state
+#endif
 		ThSuspend();
 
 		if (obj)
 		{
-			//while (obj->stopped == 0);
-
 			adxs_Clear(obj);
 			obj = nullptr;
 		}
@@ -263,14 +266,27 @@ void ADXT_Object::Thread()
 	{
 		switch (state)
 		{
+		default:
+			th_wait = 0;
+			break;
 		case ADXT_STAT_PLAYING:
 		case ADXT_STAT_DECEND:
+			th_wait = 1;
 			if(obj)
 				obj->Update();
 			break;
 		}
 
-		Sleep(5);
+		switch (state)
+		{
+		case ADXT_STAT_PLAYING:
+		case ADXT_STAT_DECEND:
+			Sleep(1);
+			break;
+		default:
+			Sleep(0);
+			break;
+		}
 	}
 }
 

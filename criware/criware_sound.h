@@ -44,7 +44,7 @@ public:
 	}
 
 	virtual void Play() {}
-	virtual int  Stop() { return 1; }
+	virtual void Stop() {}
 	virtual void Update() {}
 
 	virtual void SendData() {}

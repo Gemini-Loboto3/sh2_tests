@@ -97,7 +97,8 @@ public:
 		set_volume : 1,
 	// threading
 		th_suspended : 1,
-		th_exit : 1;
+		th_exit : 1,
+		th_wait : 1;
 	HANDLE th;
 
 private:

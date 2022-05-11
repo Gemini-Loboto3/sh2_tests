@@ -101,13 +101,14 @@ int afs_StartAfs(ADXT_Object* obj, int patid, int fid)
 	ADXD_Log("Starting AFS %d\n", fid);
 #endif
 
+	// we need to make a new handle for wav to prevent crashes
+	HANDLE fp = ADXF_OpenFile(afs.part_name.c_str());
+	ADXF_Seek(fp, afs.entries[fid].pos, FILE_BEGIN);
+
 	// special case for AFS, detect RIFF wave
 	if (magic == 'RIFF' || magic == 'FFIR')
 	{
 		auto wav = new WAVStream;
-		// we need to make a new handle for wav to prevent crashes
-		HANDLE fp = ADXF_OpenFile(afs.part_name.c_str());
-		ADXF_Seek(fp, afs.entries[fid].pos, FILE_BEGIN);
 		if (wav->Open(fp, afs.entries[fid].pos) == S_FALSE)
 		{
 			ADXD_Warning(__FUNCTION__, "Error opening WAV stream.");
@@ -118,11 +119,8 @@ int afs_StartAfs(ADXT_Object* obj, int patid, int fid)
 	// assume ADX
 	else
 	{
-		// rewind back to where we need to be
-		ADXF_Seek(afs.fp, afs.entries[fid].pos, FILE_BEGIN);
-
 		auto adx = new ADXStream;
-		adx->Open(afs.fp, afs.entries[fid].pos);
+		adx->Open(fp, afs.entries[fid].pos);
 		if (FAILED(OpenADX(adx)))
 		{
 			ADXD_Warning(__FUNCTION__, "Error opening ADX stream.");
@@ -131,16 +129,16 @@ int afs_StartAfs(ADXT_Object* obj, int patid, int fid)
 		stream = adx;
 	}
 
-	//ADX_lock();
+	ADX_lock();
 	obj->state = ADXT_STAT_PLAYING;
 	obj->stream = stream;
 	obj->obj = adxs_FindObj();
 	obj->obj->adx = obj;
 	obj->obj->loops = stream->loop_enabled;
+	ADX_unlock();
 
 	obj->obj->CreateBuffer(stream);
 	obj->ThResume();
-	//ADX_unlock();
 
 	obj->obj->Play();
 

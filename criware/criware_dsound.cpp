@@ -101,23 +101,21 @@ void SndObjDSound::Play()
 	}
 }
 
-int SndObjDSound::Stop()
+void SndObjDSound::Stop()
 {
 	// this is inactive or stopped already
-	if (used == 0) return 1;
-	if (stopped == 1) return 1;
+	if (used == 0) return;
+	if (stopped == 1) return;
 
 	if (pBuf)
 	{
 		pBuf->Stop();
 
-		DWORD st;
-		do { pBuf->GetStatus(&st); } while (st & DSBSTATUS_PLAYING);
+		//DWORD st;
+		//do { pBuf->GetStatus(&st); } while (st & DSBSTATUS_PLAYING);
 
 		stopped = 1;
 	}
-
-	return 0;
 }
 
 void SndObjDSound::Update()
@@ -138,7 +136,6 @@ void SndObjDSound::Update()
 				{
 					Stop();
 					adx->state = ADXT_STAT_PLAYEND;
-					return;
 				}
 			}
 
@@ -245,7 +242,7 @@ void SndObjDSound::Fill(u_long size)
 	DS_CALL_CATCH((pBuf->Lock(offset, size, (LPVOID*)&ptr1, &bytes1, (LPVOID*)&ptr2, &bytes2, 0)), __FUNCTION__, "Couldn't lock DirectSound buffer (%s)");
 
 	// just fill with silence if we're stopping or the data was previously over
-	if (adx->state == ADXT_STAT_DECEND)
+	if (adx->state != ADXT_STAT_PLAYING)
 	{
 		ADXD_Log(__FUNCTION__ ": sending silence...\n");
 		memset(ptr1, 0, bytes1);

@@ -88,7 +88,6 @@ static DWORD WINAPI aix_load_thread(LPVOID param)
 	obj->demuxer = aix;
 	obj->stream_no = aix->stream_count;
 
-	//ADX_lock();
 	// create the necessary buffers
 	for (int i = 0; i < obj->stream_no; i++)
 	{
@@ -105,7 +104,6 @@ static DWORD WINAPI aix_load_thread(LPVOID param)
 
 	for (int i = 0; i < obj->stream_no; i++)
 		obj->adxt[i].ThResume();
-	//ADX_unlock();
 
 	// kick all playback for all streams at once
 	for (int i = 0; i < obj->stream_no; i++)
@@ -162,11 +160,13 @@ void aix_start(AIXP_Object* obj, const char* fname)
 	//ADX_lock();
 	for (int i = 0; i < obj->stream_no; i++)
 	{
+		ADX_lock();
 		obj->adxt[i].state = ADXT_STAT_PREP;
 		obj->adxt[i].stream = aix->stream[i];
 		obj->adxt[i].obj = adxs_FindObj();
 		obj->adxt[i].obj->loops = true;
 		obj->adxt[i].obj->adx = &obj->adxt[i];
+		ADX_unlock();
 		obj->adxt[i].obj->CreateBuffer(obj->adxt[i].stream);
 	}
 	// flag any unused adxt as stopped
@@ -194,24 +194,44 @@ void AIXP_Object::Release()
 {
 	if (state != AIXP_STAT_STOP)
 	{
-#if 0
-		// ensure all stream threads are dead
-		for (int i = 0; i < stream_no; i++)
-			adxt[i].ThKill();
-		// now we can release everything
-		for (int i = 0; i < stream_no; i++)
-			adxt[i].Reset();
+#if MEASURE_ACCESS
+		double start = TimeGetTime();
+#endif
 
-		if (demuxer)
+#if 1
+		// ensure all stream threads are fully suspended
+		for (int i = 0; i < stream_no; i++)
+			adxt[i].state = ADXT_STAT_STOP;
+#if 0
+		SwitchToThread();
+#else	// possibly faster than SwitchToThread
+		int cnt;
+		do
 		{
-			delete demuxer;
-			demuxer = nullptr;
+			cnt = 0;
+			for (int i = 0; i < stream_no; i++)
+				cnt += adxt[i].th_wait;
+		} while (cnt > 0);
+#endif
+		for (int i = 0; i < stream_no; i++)
+			adxt[i].ThSuspend();
+		// it's now safe to release sound buffers
+		for (int i = 0; i < stream_no; i++)
+		{
+			if (adxt[i].obj)
+			{
+				ADX_lock();
+				adxs_Clear(adxt[i].obj);
+				adxt[i].obj = nullptr;
+				ADX_unlock();
+			}
 		}
+
 #else
 		for(int i = 0; i < stream_no; i++)
 			ADXT_Stop(&adxt[i]);
 #endif
-
+		// drop streams and demuxer
 		for (int i = 0; i < stream_no; i++)
 		{
 			if (adxt[i].stream)
@@ -225,5 +245,9 @@ void AIXP_Object::Release()
 
 		state = AIXP_STAT_STOP;
 		stream_no = 0;
+
+#if MEASURE_ACCESS
+		ADXD_Log(__FUNCTION__ ": AIX releasing in %f ms.\n", TimeGetTime() - start);
+#endif
 	}
 }

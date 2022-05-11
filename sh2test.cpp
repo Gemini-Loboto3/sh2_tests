@@ -95,7 +95,11 @@ void Inject_tests()
 {
 	MakePageWritable(0x401000, 0x24A8FFF - 0x401000);
 
+#if 0
 	*(BYTE*)0x449019 = 0;		// fix that goddamn stupid lag
+#else
+	memset((void*)0x449018, 0x90, 4);
+#endif
 
 	// disable safe mode
 	*(BYTE*)0x4F7510 = 0xC3;

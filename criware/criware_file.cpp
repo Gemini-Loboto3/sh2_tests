@@ -15,7 +15,7 @@
 // ------------------------------------------------
 HANDLE ADXF_OpenFile(const char* filename)
 {
-	return CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	return CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY /*FILE_ATTRIBUTE_NORMAL*/, nullptr);
 }
 
 void ADXF_CloseFile(HANDLE fp)
@@ -233,7 +233,7 @@ int ADXStream::Open(HANDLE _fp, u_long pos)
 
 void ADXStream::Close()
 {
-	if(start == 0)
+	//if(start == 0)
 		CloseHandle(fp);
 }
 
@@ -303,8 +303,8 @@ void AIX_Demuxer::Open(HANDLE _fp, u_long _stream_count, u_long total_size)
 #endif
 
 #if AIX_SEGMENTED
-	// request the necessary amount of data for headers and a bunch of blocks of samples
-	RequestData(10);
+	// request the necessary amount of data for headers and initial buffer filling
+	RequestData(4);
 #else
 	AIX_CHUNK chunk;
 	AIXP_HEADER aixp;
