@@ -59,5 +59,5 @@ void ADXD_Log(const char* fmt, ...)
 
 void ADXD_SetLevel(int level)
 {
-	dlevel = level < 2 ? 1 : 0;
+	dlevel = level < 2 ? 0 : 1;
 }
